@@ -1,0 +1,14 @@
+# Directorios generados automáticamente por Composer
+/vendor/
+
+# Archivos de configuración y logs
+.env
+.env.testing
+*.log
+
+# Archivos generados por el servidor o SO
+.DS_Store
+Thumbs.db
+
+# Directorios de archivos subidos por el usuario (las imágenes)
+/public/uploads/
