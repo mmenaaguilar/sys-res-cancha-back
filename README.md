@@ -1,14 +1,9 @@
-¡Claro\! Aquí tienes un borrador profesional para el archivo `README.md` de tu proyecto backend, incluyendo la sección de configuración y los comandos para iniciarlo.
 
-Asegúrate de reemplazar los corchetes `[... ]` con la información específica de tu proyecto.
-
------
-
-# 🏟️ SysReserCancha Back-end
+# SysReserCancha Back-end
 
 Este es el repositorio del servicio de **Back-end** para el Sistema de Reserva de Canchas Deportivas. Está construido en PHP nativo utilizando principios de Programación Orientada a Objetos (POO) y el patrón MVC simplificado, con Composer para la gestión de dependencias.
 
-## 🚀 Requisitos del Sistema
+## Requisitos del Sistema
 
 Para ejecutar este proyecto en tu entorno local, necesitas tener instalado lo siguiente:
 
@@ -19,7 +14,7 @@ Para ejecutar este proyecto en tu entorno local, necesitas tener instalado lo si
 
 -----
 
-## ⚙️ Configuración y Puesta en Marcha
+## Configuración y Puesta en Marcha
 
 Sigue estos pasos para dejar el sistema listo y funcionando.
 
@@ -43,24 +38,6 @@ composer install
 ### 3\. Configurar Variables de Entorno
 
 El proyecto usa un archivo `.env` para la configuración sensible.
-
-1.  Copia el archivo de ejemplo (si existe) o crea un nuevo archivo llamado **`.env`** en la raíz del proyecto.
-
-2.  Rellena las variables de conexión a tu base de datos:
-
-    ```env
-    # .env
-
-    # Configuración de la Aplicación
-    APP_ENV=local
-    APP_KEY=[Genera una clave aleatoria de 32 caracteres]
-
-    # Configuración de Base de Datos MySQL
-    DB_HOST=localhost
-    DB_DATABASE=sistema_reservas_canchas
-    DB_USERNAME=root
-    DB_PASSWORD=[tu_contraseña_mysql]
-    ```
 
 ### 4\. Crear la Base de Datos
 
