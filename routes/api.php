@@ -8,3 +8,8 @@
 
 $router->post('/api/register', 'AuthController@register');
 $router->post('/api/login', 'AuthController@login');
+
+$router->get('/api/tipo-deporte/combo', 'TipoDeporteController@combo');
+$router->get('/api/ubigeo/search', 'UbigeoController@search');
+
+$router->get('/api/complejos/search', 'ComplejoDeportivoController@search');
