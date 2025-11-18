@@ -230,11 +230,10 @@ CREATE TABLE CanchaFavoritos (
 
 CREATE TABLE PoliticaCancelacion (
     politica_id INT AUTO_INCREMENT PRIMARY KEY,
-    complejo_id INT NOT NULL UNIQUE,
+    complejo_id INT NOT NULL,
     horas_limite INT NOT NULL,
-    estrategia_temprana ENUM('CreditoCompleto','ReembolsoFisico') NOT NULL,
-    estrategia_tardia ENUM('RetenerPago') NOT NULL,
-    estado ENUM('activo', 'inactivo') DEFAULT 'activo'
+    estrategia_temprana ENUM('CreditoCompleto','ReembolsoFisico') NOT NULL UNIQUE,
+    estado ENUM('activo', 'inactivo') DEFAULT 'activo',
     FOREIGN KEY (complejo_id) REFERENCES ComplejoDeportivo(complejo_id) ON DELETE CASCADE
 );
 

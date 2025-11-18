@@ -25,4 +25,11 @@ $router->post('/api/servicios/list', 'ServicioController@listByFilters');
 $router->post('/api/servicios', 'ServicioController@create');
 $router->put('/api/servicios/{id}', 'ServicioController@update');
 $router->put('/api/servicios/status/{id}', 'ServicioController@changeStatus');
-$router->delete('/api/servicios/{id}', 'ServicioController@delete'); 
+$router->delete('/api/servicios/{id}', 'ServicioController@delete');
+
+// Rutas para la gestión de Políticas de Cancelación
+$router->post('/api/politicas/list', 'PoliticaController@getByComplejo');
+$router->post('/api/politicas', 'PoliticaController@create');
+$router->put('/api/politicas/{id}', 'PoliticaController@update');
+$router->put('/api/politicas/status/{id}', 'PoliticaController@changeStatus');
+$router->delete('/api/politicas/{id}', 'PoliticaController@delete');
