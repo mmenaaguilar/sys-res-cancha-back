@@ -86,3 +86,8 @@ INSERT INTO ComplejoDeportivo (
 ('Complejo Deportivo El Triunfo', 1, 1, 1, 'Av. Leguía – Tacna Centro', NULL, NULL, 'Cancha techada y grass sintético.', 'activo'),
 
 ('Complejo Deportivo Ciudad Nueva', 1, 1, 4, 'Av. Circunvalación – Ciudad Nueva', NULL, NULL, 'Complejo con canchas múltiples.', 'activo');
+
+INSERT INTO Usuarios (nombre, telefono, correo, contrasena, estado) VALUES
+('Juan Pérez (Cliente)', '991234567', 'juan.perez@example.com', 'password_hash_cliente_1', 'activo'),
+('María García (Gestora)', '998765432', 'maria.garcia@gestor.com', 'password_hash_gestor_2', 'activo'),
+('Pedro Sánchez (Admin)', '990001112', 'pedro.admin@sistema.com', 'password_hash_admin_3', 'activo');

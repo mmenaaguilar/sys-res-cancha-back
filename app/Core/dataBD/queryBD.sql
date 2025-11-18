@@ -106,6 +106,7 @@ CREATE TABLE UsuarioRol (
     usuario_id INT NOT NULL,
     rol_id INT NOT NULL,
     complejo_id INT NULL,
+    estado ENUM('activo', 'inactivo') DEFAULT 'activo',
     UNIQUE KEY idx_unicidad_compuesta (usuario_id, rol_id, complejo_id),
 
     FOREIGN KEY (usuario_id) REFERENCES Usuarios(usuario_id) ON DELETE CASCADE,

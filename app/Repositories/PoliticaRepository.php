@@ -5,7 +5,7 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use PDO;
-use Exception;
+use PDOException;
 
 class PoliticaRepository
 {
@@ -56,10 +56,10 @@ class PoliticaRepository
                 ':estado' => $data['estado'],
             ]);
             return (int) $this->db->lastInsertId();
-        } catch (PDOException $e) {
+        } catch (PDOException  $e) {
             // Manejo de error de clave única para la restricción global
             if ($e->getCode() === '23000') {
-                throw new Exception("Error de clave única: La estrategia temprana '{$data['estrategia_temprana']}' ya está siendo utilizada globalmente por otra política.", 409);
+                throw new PDOException("Error de clave única: La estrategia temprana '{$data['estrategia_temprana']}' ya está siendo utilizada globalmente por otra política.", 409);
             }
             throw $e;
         }
@@ -83,9 +83,9 @@ class PoliticaRepository
                 ':estado' => $data['estado'],
                 ':id' => $id,
             ]);
-        } catch (PDOException $e) {
+        } catch (PDOException  $e) {
             if ($e->getCode() === '23000') {
-                throw new Exception("Error de clave única: La estrategia temprana '{$data['estrategia_temprana']}' ya está siendo utilizada globalmente por otra política.", 409);
+                throw new PDOException("Error de clave única: La estrategia temprana '{$data['estrategia_temprana']}' ya está siendo utilizada globalmente por otra política.", 409);
             }
             throw $e;
         }
