@@ -129,6 +129,7 @@ CREATE TABLE Servicios (
     descripcion TEXT,
     monto DECIMAL(10,2) NOT NULL,
     is_obligatorio BOOLEAN DEFAULT FALSE,
+    estado ENUM('activo', 'inactivo') DEFAULT 'activo',
     FOREIGN KEY (complejo_id) REFERENCES ComplejoDeportivo(complejo_id) ON DELETE CASCADE
 );
 

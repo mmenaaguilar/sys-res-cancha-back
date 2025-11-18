@@ -18,4 +18,11 @@ $router->post('/api/contactos/list', 'ContactoController@listByComplejo');
 $router->post('/api/contactos', 'ContactoController@create');
 $router->put('/api/contactos/{id}', 'ContactoController@update');
 $router->put('/api/contactos/status/{id}', 'ContactoController@changeStatus');
-$router->delete('/api/contactos/{id}', 'ContactoController@delete'); // Eliminación física
+$router->delete('/api/contactos/{id}', 'ContactoController@delete');
+
+// Rutas para la gestión de Servicios
+$router->post('/api/servicios/list', 'ServicioController@listByFilters');
+$router->post('/api/servicios', 'ServicioController@create');
+$router->put('/api/servicios/{id}', 'ServicioController@update');
+$router->put('/api/servicios/status/{id}', 'ServicioController@changeStatus');
+$router->delete('/api/servicios/{id}', 'ServicioController@delete'); 
