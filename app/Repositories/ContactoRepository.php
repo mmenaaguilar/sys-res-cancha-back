@@ -32,31 +32,40 @@ class ContactoRepository
     /**
      * Lista todos los contactos asociados a un Complejo Deportivo.
      */
-    public function getContactosPaginatedByComplejo(?int $complejoId, int $limit, int $offset): array
+    public function getContactosPaginatedByFilters(?int $complejoId, ?string $searchTerm, int $limit, int $offset): array
     {
         // 1. Definición de la consulta base y cláusulas condicionales
-        $dataSql = "SELECT *
-                    FROM Contactos
-                    WHERE estado = 'activo'";
+        $selectAndFrom = "SELECT contacto_id, complejo_id, tipo, valor_contacto, estado
+                          FROM Contactos
+                          WHERE estado = 'activo'";
 
-        $totalSql = "SELECT COUNT(contacto_id) AS total FROM Contactos WHERE estado = 'activo'";
+        $totalFrom = "SELECT COUNT(contacto_id) AS total FROM Contactos WHERE estado = 'activo'";
 
         $whereClauses = [];
         $params = [];
 
-        // Filtro condicional por complejo_id
+        // Filtro MANDATORIO: complejo_id
         if ($complejoId !== null) {
             $whereClauses[] = "complejo_id = :complejo_id";
             $params[':complejo_id'] = $complejoId;
+        } else {
+            // Si el ID del complejo es nulo, no devolvemos datos.
+            return ['total' => 0, 'data' => []];
         }
 
-        if (!empty($whereClauses)) {
-            $dataSql .= " AND " . implode(" AND ", $whereClauses);
-            $totalSql .= " AND " . implode(" AND ", $whereClauses);
+        // Filtro opcional por término de búsqueda (valor_contacto o tipo)
+        if (!empty($searchTerm)) {
+            // Se busca el término en las columnas más relevantes (tipo o valor_contacto)
+            $whereClauses[] = "(tipo LIKE :search_term OR valor_contacto LIKE :search_term)";
+            $params[':search_term'] = '%' . $searchTerm . '%';
         }
 
-        // Orden final y paginación (usando nombre y luego contacto_id como secundario)
-        $dataSql .= " ORDER BY contacto_id ASC LIMIT :limit OFFSET :offset";
+        // Construir la cláusula WHERE final
+        $whereSql = !empty($whereClauses) ? " AND " . implode(" AND ", $whereClauses) : "";
+
+        // Consultas completas
+        $dataSql = $selectAndFrom . $whereSql . " ORDER BY contacto_id ASC LIMIT :limit OFFSET :offset";
+        $totalSql = $totalFrom . $whereSql;
 
         // 2. Ejecutar Conteo Total
         $totalStmt = $this->db->prepare($totalSql);

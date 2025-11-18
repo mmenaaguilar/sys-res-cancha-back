@@ -4,9 +4,10 @@
 namespace App\Controllers;
 
 use App\Services\ContactoService;
+use App\Core\Helpers\ApiHelper;
 use Exception;
 
-class ContactoController
+class ContactoController extends ApiHelper
 {
     private ContactoService $contactoService;
 
@@ -14,41 +15,6 @@ class ContactoController
     {
         $this->contactoService = new ContactoService();
     }
-
-    // --- Helper para leer JSON y setear headers ---
-    private function initRequest(string $method): ?array
-    {
-        header('Content-Type: application/json');
-        if ($_SERVER['REQUEST_METHOD'] !== $method) {
-            http_response_code(405);
-            echo json_encode(['success' => false, 'error' => 'Método no permitido.']);
-            return null;
-        }
-
-        $input = file_get_contents('php://input');
-        $data = json_decode($input, true);
-
-        if ($method !== 'DELETE' && json_last_error() !== JSON_ERROR_NONE) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Formato JSON inválido.']);
-            return null;
-        }
-        return $data;
-    }
-
-    private function sendResponse($data, int $code = 200)
-    {
-        http_response_code($code);
-        echo json_encode(['success' => true, 'data' => $data]);
-    }
-
-    private function sendError(Exception $e, int $code = 400)
-    {
-        http_response_code($code);
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-    }
-    // ---------------------------------------------
-
 
     /**
      * [READ - LISTAR] Obtiene contactos por complejo_id (POST /api/contactos/list)
@@ -59,6 +25,7 @@ class ContactoController
         if ($data === null) return;
 
         $complejoId = $data['complejo_id'] ?? null;
+        $searchTerm = $data['termino_busqueda'] ?? null;
         $page = $data['page'] ?? 1;
         $limit = $data['limit'] ?? 10;
 
@@ -68,7 +35,7 @@ class ContactoController
             $page = max(1, (int)$page);
             $limit = max(1, (int)$limit);
 
-            $list = $this->contactoService->getContactosPaginatedByComplejo($complejoId, $page, $limit);
+            $list = $this->contactoService->getContactosPaginatedByComplejo($complejoId, $searchTerm, $page, $limit);
             $this->sendResponse($list);
         } catch (Exception $e) {
             $this->sendError($e);
@@ -112,13 +79,12 @@ class ContactoController
      */
     public function delete(int $id)
     {
-        $this->initRequest('DELETE');
+        $data = $this->initRequest('DELETE');
 
         try {
             $deleted = $this->contactoService->deleteContact($id);
             if (!$deleted) {
-                http_response_code(404);
-                echo json_encode(['success' => false, 'error' => 'Contacto no encontrado o ya eliminado.']);
+                $this->sendError('Contacto no encontrado o ya eliminado.', 404);
                 return;
             }
             $this->sendResponse(['contacto_id' => $id, 'mensaje' => 'Contacto eliminado físicamente con éxito.']);
@@ -132,11 +98,15 @@ class ContactoController
      */
     public function changeStatus(int $id)
     {
-        $this->initRequest('PUT');
+        $data = $this->initRequest('PUT');
 
         try {
             $result = $this->contactoService->changeStatus($id);
-            $this->sendResponse(['contacto_id' => $id, 'nuevo_estado' => $result['nuevo_estado'], 'mensaje' => "Estado cambiado a {$result['nuevo_estado']}."]);
+            $this->sendResponse([
+                'contacto_id' => $id,
+                'nuevo_estado' => $result['nuevo_estado'],
+                'mensaje' => "Estado cambiado a {$result['nuevo_estado']}."
+            ]);
         } catch (Exception $e) {
             $this->sendError($e);
         }

@@ -4,10 +4,11 @@
 namespace App\Controllers;
 
 use App\Services\PoliticaService;
+use App\Core\Helpers\ApiHelper;
 use Exception;
 use PDOException; // Importar PDOException para manejo específico
 
-class PoliticaController
+class PoliticaController extends ApiHelper
 {
     private PoliticaService $politicaService;
 
@@ -15,42 +16,6 @@ class PoliticaController
     {
         $this->politicaService = new PoliticaService();
     }
-
-    // --- Helper Methods ---
-    private function initRequest(string $method): ?array
-    {
-        header('Content-Type: application/json');
-        if ($_SERVER['REQUEST_METHOD'] !== $method) {
-            http_response_code(405);
-            echo json_encode(['success' => false, 'error' => 'Método no permitido.']);
-            return null;
-        }
-
-        $input = file_get_contents('php://input');
-        $data = json_decode($input, true);
-
-        if ($method !== 'DELETE' && json_last_error() !== JSON_ERROR_NONE) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Formato JSON inválido.']);
-            return null;
-        }
-        return $data;
-    }
-
-    private function sendResponse($data, int $code = 200)
-    {
-        http_response_code($code);
-        echo json_encode(['success' => true, 'data' => $data]);
-    }
-
-    private function sendError(Exception $e, int $code = 400)
-    {
-        // Usar 409 Conflict si el error viene de la restricción UNIQUE del repositorio
-        $responseCode = ($e->getCode() === 409) ? 409 : $code;
-        http_response_code($responseCode);
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-    }
-    // ----------------------------------------------------------------------------------
 
     /**
      * [CREATE] Crea la política (POST /api/politicas)
@@ -64,7 +29,9 @@ class PoliticaController
             $newId = $this->politicaService->createPolicy($data);
             $this->sendResponse(['politica_id' => $newId], 201);
         } catch (Exception $e) {
-            $this->sendError($e);
+            // Mantener la lógica específica para código 409
+            $code = ($e->getCode() === 409) ? 409 : 400;
+            $this->sendError($e, $code);
         }
     }
 
@@ -113,13 +80,12 @@ class PoliticaController
      */
     public function delete(int $id)
     {
-        $this->initRequest('DELETE');
+        $data = $this->initRequest('DELETE');
 
         try {
             $deleted = $this->politicaService->deletePolicy($id);
             if (!$deleted) {
-                http_response_code(404);
-                echo json_encode(['success' => false, 'error' => 'Política no encontrada o ya eliminada.']);
+                $this->sendError('Política no encontrada o ya eliminada.', 404);
                 return;
             }
             $this->sendResponse(['politica_id' => $id, 'mensaje' => 'Política eliminada físicamente con éxito.']);
@@ -133,11 +99,15 @@ class PoliticaController
      */
     public function changeStatus(int $id)
     {
-        $this->initRequest('PUT');
+        $data = $this->initRequest('PUT');
 
         try {
             $result = $this->politicaService->toggleStatus($id);
-            $this->sendResponse(['politica_id' => $id, 'nuevo_estado' => $result['nuevo_estado'], 'mensaje' => "Estado cambiado a {$result['nuevo_estado']}."]);
+            $this->sendResponse([
+                'politica_id' => $id,
+                'nuevo_estado' => $result['nuevo_estado'],
+                'mensaje' => "Estado cambiado a {$result['nuevo_estado']}."
+            ]);
         } catch (Exception $e) {
             $this->sendError($e);
         }
