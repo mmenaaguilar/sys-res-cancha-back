@@ -234,6 +234,7 @@ CREATE TABLE PoliticaCancelacion (
     horas_limite INT NOT NULL,
     estrategia_temprana ENUM('CreditoCompleto','ReembolsoFisico') NOT NULL,
     estrategia_tardia ENUM('RetenerPago') NOT NULL,
+    estado ENUM('activo', 'inactivo') DEFAULT 'activo'
     FOREIGN KEY (complejo_id) REFERENCES ComplejoDeportivo(complejo_id) ON DELETE CASCADE
 );
 
