@@ -83,7 +83,6 @@ CREATE TABLE ComplejoDeportivo (
     url_map VARCHAR(500),
     descripcion TEXT,
     estado ENUM('activo', 'inactivo') DEFAULT 'activo',
-    eliminado INT DEFAULT 0,
 
     FOREIGN KEY (departamento_id) REFERENCES Departamento(departamento_id),
     FOREIGN KEY (provincia_id) REFERENCES Provincia(provincia_id),
@@ -98,7 +97,6 @@ CREATE TABLE Cancha (
     url_imagen VARCHAR(500),
     descripcion TEXT,
     estado ENUM('activo', 'inactivo') DEFAULT 'activo',
-    eliminado INT DEFAULT 0,
     FOREIGN KEY (complejo_id) REFERENCES ComplejoDeportivo(complejo_id) ON DELETE CASCADE,
     FOREIGN KEY (tipo_deporte_id) REFERENCES TipoDeporte(tipo_deporte_id)
 );
@@ -120,6 +118,7 @@ CREATE TABLE Contactos (
     complejo_id INT NOT NULL,
     tipo VARCHAR(50) NOT NULL,
     valor_contacto VARCHAR(255) NOT NULL,
+    estado ENUM('activo', 'inactivo') DEFAULT 'activo',
     FOREIGN KEY (complejo_id) REFERENCES ComplejoDeportivo(complejo_id) ON DELETE CASCADE
 );
 

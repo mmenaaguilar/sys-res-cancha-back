@@ -17,11 +17,33 @@ class Router
         $this->routes['GET'][$uri] = $controller;
     }
 
-    // Puedes añadir otros métodos (post, put, delete) aquí
+    /**
+     * Registra una ruta POST.
+     */
     public function post(string $uri, string $controller): void
     {
         $this->routes['POST'][$uri] = $controller;
     }
+
+    // --- MÉTODOS AÑADIDOS PARA SOPORTAR EL CRUD ---
+
+    /**
+     * Registra una ruta PUT (para actualizaciones).
+     */
+    public function put(string $uri, string $controller): void
+    {
+        $this->routes['PUT'][$uri] = $controller;
+    }
+
+    /**
+     * Registra una ruta DELETE (para eliminaciones).
+     */
+    public function delete(string $uri, string $controller): void
+    {
+        $this->routes['DELETE'][$uri] = $controller;
+    }
+    
+    // ----------------------------------------------
 
     /**
      * Despacha la petición a su destino.
@@ -40,6 +62,7 @@ class Router
 
         foreach ($this->routes[$method] as $routeUri => $action) {
             // Convertir la ruta a una expresión regular para manejar parámetros {id}
+            // NOTA: Se debe escapar el separador de patrón, que es '#'.
             $pattern = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '([a-zA-Z0-9_]+)', $routeUri);
 
             if (preg_match("#^$pattern$#", $uri, $matches)) {

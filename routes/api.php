@@ -11,5 +11,11 @@ $router->post('/api/login', 'AuthController@login');
 
 $router->get('/api/tipo-deporte/combo', 'TipoDeporteController@combo');
 $router->get('/api/ubigeo/search', 'UbigeoController@search');
+$router->post('/api/complejos/search-available', 'ComplejoDeportivoController@searchAvailable');
 
-$router->get('/api/complejos/search', 'ComplejoDeportivoController@search');
+// Rutas para la gestión de Contactos
+$router->post('/api/contactos/list', 'ContactoController@listByComplejo');
+$router->post('/api/contactos', 'ContactoController@create');
+$router->put('/api/contactos/{id}', 'ContactoController@update');
+$router->put('/api/contactos/status/{id}', 'ContactoController@changeStatus');
+$router->delete('/api/contactos/{id}', 'ContactoController@delete'); // Eliminación física
