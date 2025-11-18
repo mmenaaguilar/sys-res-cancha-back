@@ -38,12 +38,27 @@ class ContactoService
 
     // --- CRUD OPERACIONES ---
 
-    public function getContactosByComplejo(int $complejoId): array
+    public function getContactosPaginatedByComplejo(?int $complejoId, int $page, int $limit): array
     {
-        if ($complejoId <= 0) {
-            throw new Exception("ID de complejo inválido.");
+        if ($limit <= 0) {
+            throw new Exception("El límite de resultados debe ser un número positivo.");
         }
-        return $this->contactoRepository->listByComplejoId($complejoId);
+        $page = max(1, $page);
+
+        $offset = ($page - 1) * $limit;
+
+        $result = $this->contactoRepository->getContactosPaginatedByComplejo($complejoId, $limit, $offset);
+
+        $total = $result['total'];
+        $totalPages = ceil($total / $limit);
+
+        return [
+            'total' => $total,
+            'per_page' => $limit,
+            'current_page' => $page,
+            'last_page' => (int)$totalPages,
+            'data' => $result['data']
+        ];
     }
 
     public function createContact(array $data): int

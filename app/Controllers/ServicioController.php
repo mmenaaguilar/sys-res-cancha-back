@@ -15,7 +15,8 @@ class ServicioController
         $this->servicioService = new ServicioService();
     }
 
-    // --- Helper Methods (as seen in ContactoController) ---
+
+    // --- Helper para leer JSON y setear headers ---
     private function initRequest(string $method): ?array
     {
         header('Content-Type: application/json');
@@ -29,7 +30,6 @@ class ServicioController
         $data = json_decode($input, true);
 
         if ($method !== 'DELETE' && json_last_error() !== JSON_ERROR_NONE) {
-            // El error que tuviste antes, aquí está el manejo.
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Formato JSON inválido.']);
             return null;
@@ -48,89 +48,79 @@ class ServicioController
         http_response_code($code);
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
-    // --------------------------------------------------------
+    // ---------------------------------------------
 
-    /**
-     * [READ - LISTAR] Lista servicios por filtros (POST /api/servicios/list)
-     * Espera complejo_id y opcionalmente tipo_deporte_id en el body.
-     */
+    // RUTA: POST /api/servicios
+    public function create()
+    {
+        $data = $this->initRequest('POST');
+        if ($data === null) return;
+        try {
+            $newId = $this->servicioService->createServicio($data);
+            $this->sendResponse(['servicio_id' => $newId, 'mensaje' => 'Servicio creado con éxito.'], 201);
+        } catch (Exception $e) {
+            $this->sendError($e, $e->getCode() > 0 ? $e->getCode() : 400);
+        }
+    }
+
+    // RUTA: POST /api/servicios/list
     public function listByFilters()
     {
         $data = $this->initRequest('POST');
         if ($data === null) return;
 
+        $complejoId = $data['complejo_id'] ?? null;
+        $searchTerm = $data['termino_busqueda'] ?? null;
+        $page = $data['page'] ?? 1;
+        $limit = $data['limit'] ?? 10;
+
         try {
-            $servicios = $this->servicioService->getServiciosByFilters($data);
-            $this->sendResponse(['total' => count($servicios), 'servicios' => $servicios]);
+            // Saneamiento de parámetros
+            $complejoId = (empty($complejoId) || !is_numeric($complejoId)) ? null : (int)$complejoId;
+            $page = max(1, (int)$page);
+            $limit = max(1, (int)$limit);
+
+            $list = $this->servicioService->getServiciosPaginatedByFilters($complejoId, $searchTerm, $page, $limit);
+            $this->sendResponse($list);
         } catch (Exception $e) {
-            $this->sendError($e);
+            $this->sendError($e, $e->getCode() > 0 ? $e->getCode() : 400);
         }
     }
 
-    /**
-     * [CREATE] Crea un nuevo servicio (POST /api/servicios)
-     */
-    public function create()
-    {
-        $data = $this->initRequest('POST');
-        if ($data === null) return;
-
-        try {
-            $newId = $this->servicioService->createService($data);
-            $this->sendResponse(['servicio_id' => $newId], 201);
-        } catch (Exception $e) {
-            $this->sendError($e);
-        }
-    }
-
-    /**
-     * [UPDATE] Edita un servicio existente (PUT /api/servicios/{id})
-     */
+    // RUTA: PUT /api/servicios/{id}
     public function update(int $id)
     {
         $data = $this->initRequest('PUT');
         if ($data === null) return;
-
         try {
-            $this->servicioService->updateService($id, $data);
-            $this->sendResponse(['servicio_id' => $id, 'mensaje' => 'Servicio actualizado con éxito.']);
+            $updated = $this->servicioService->updateServicio($id, $data);
+            $this->sendResponse(['servicio_id' => $id, 'mensaje' => $updated ? 'Servicio actualizado.' : 'No se realizaron cambios.'], 200);
         } catch (Exception $e) {
-            $this->sendError($e);
+            $this->sendError($e, $e->getCode() > 0 ? $e->getCode() : 400);
         }
     }
 
-    /**
-     * [DELETE] Elimina físicamente un servicio (DELETE /api/servicios/{id})
-     */
-    public function delete(int $id)
-    {
-        $this->initRequest('DELETE'); // Leer body no es necesario
-
-        try {
-            $deleted = $this->servicioService->deleteService($id);
-            if (!$deleted) {
-                http_response_code(404);
-                echo json_encode(['success' => false, 'error' => 'Servicio no encontrado o ya eliminado.']);
-                return;
-            }
-            $this->sendResponse(['servicio_id' => $id, 'mensaje' => 'Servicio eliminado físicamente con éxito.']);
-        } catch (Exception $e) {
-            $this->sendError($e);
-        }
-    }
-
-    /**
-     * [CHANGE STATUS] Cambia el estado (PUT /api/servicios/status/{id})
-     */
+    // RUTA: PUT /api/servicios/status/{id}
     public function changeStatus(int $id)
     {
-        $this->initRequest('PUT'); // Leer body no es necesario
-
+        $this->initRequest('PUT');
         try {
-            $result = $this->servicioService->changeStatus($id);
-            $this->sendResponse(['servicio_id' => $id, 'nuevo_estado' => $result['nuevo_estado'], 'mensaje' => "Estado cambiado a {$result['nuevo_estado']}."]);
+            $updated = $this->servicioService->changeServicioStatus($id);
+            $this->sendResponse(['servicio_id' => $id, 'mensaje' => $updated ? 'Estado de servicio cambiado.' : 'Error al cambiar estado.'], 200);
         } catch (Exception $e) {
-            $this->sendError($e);
+            $this->sendError($e, $e->getCode() > 0 ? $e->getCode() : 400);
+        }
+    }
+
+    // RUTA: DELETE /api/servicios/{id}
+    public function delete(int $id)
+    {
+        $this->initRequest('DELETE');
+        try {
+            $deleted = $this->servicioService->deleteServicio($id);
+            $this->sendResponse(['servicio_id' => $id, 'mensaje' => $deleted ? 'Servicio eliminado.' : 'Servicio no encontrado.'], $deleted ? 200 : 404);
+        } catch (Exception $e) {
+            $this->sendError($e, $e->getCode() > 0 ? $e->getCode() : 400);
         }
     }
 }

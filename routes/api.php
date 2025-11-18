@@ -29,6 +29,13 @@ $router->put('/api/servicios/{id}', 'ServicioController@update');
 $router->put('/api/servicios/status/{id}', 'ServicioController@changeStatus');
 $router->delete('/api/servicios/{id}', 'ServicioController@delete');
 
+// Rutas para la gestión de ServicioPorDeporte
+$router->post('/api/servicio-deportes/list', 'ServicioPorDeporteController@listByFilters');
+$router->post('/api/servicio-deportes', 'ServicioPorDeporteController@create');
+$router->put('/api/servicio-deportes/{id}', 'ServicioPorDeporteController@update');
+$router->put('/api/servicio-deportes/status/{id}', 'ServicioPorDeporteController@changeStatus');
+$router->delete('/api/servicio-deportes/{id}', 'ServicioPorDeporteController@delete');
+
 // Rutas para la gestión de Políticas de Cancelación
 $router->post('/api/politicas/list', 'PoliticaController@getByComplejo');
 $router->post('/api/politicas', 'PoliticaController@create');

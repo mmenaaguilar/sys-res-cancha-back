@@ -32,15 +32,56 @@ class ContactoRepository
     /**
      * Lista todos los contactos asociados a un Complejo Deportivo.
      */
-    public function listByComplejoId(int $complejoId): array
+    public function getContactosPaginatedByComplejo(?int $complejoId, int $limit, int $offset): array
     {
-        $sql = "SELECT * FROM Contactos WHERE complejo_id = :complejo_id ORDER BY tipo, contacto_id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':complejo_id', $complejoId, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+        // 1. Definición de la consulta base y cláusulas condicionales
+        $dataSql = "SELECT *
+                    FROM Contactos
+                    WHERE estado = 'activo'";
 
+        $totalSql = "SELECT COUNT(contacto_id) AS total FROM Contactos WHERE estado = 'activo'";
+
+        $whereClauses = [];
+        $params = [];
+
+        // Filtro condicional por complejo_id
+        if ($complejoId !== null) {
+            $whereClauses[] = "complejo_id = :complejo_id";
+            $params[':complejo_id'] = $complejoId;
+        }
+
+        if (!empty($whereClauses)) {
+            $dataSql .= " AND " . implode(" AND ", $whereClauses);
+            $totalSql .= " AND " . implode(" AND ", $whereClauses);
+        }
+
+        // Orden final y paginación (usando nombre y luego contacto_id como secundario)
+        $dataSql .= " ORDER BY contacto_id ASC LIMIT :limit OFFSET :offset";
+
+        // 2. Ejecutar Conteo Total
+        $totalStmt = $this->db->prepare($totalSql);
+        foreach ($params as $key => $value) {
+            $totalStmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $totalStmt->execute();
+        $total = $totalStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+
+        // 3. Obtener Datos
+        $dataStmt = $this->db->prepare($dataSql);
+        foreach ($params as $key => $value) {
+            $dataStmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        // Bind de los parámetros de paginación
+        $dataStmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $dataStmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $dataStmt->execute();
+        $data = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'total' => (int)$total,
+            'data' => $data
+        ];
+    }
     /**
      * Crea un nuevo contacto.
      */

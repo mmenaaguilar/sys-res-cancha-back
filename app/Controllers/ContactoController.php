@@ -58,11 +58,18 @@ class ContactoController
         $data = $this->initRequest('POST');
         if ($data === null) return;
 
-        $complejoId = (int) ($data['complejo_id'] ?? 0);
+        $complejoId = $data['complejo_id'] ?? null;
+        $page = $data['page'] ?? 1;
+        $limit = $data['limit'] ?? 10;
 
         try {
-            $contactos = $this->contactoService->getContactosByComplejo($complejoId);
-            $this->sendResponse(['total' => count($contactos), 'contactos' => $contactos]);
+            // Saneamiento de parámetros
+            $complejoId = (empty($complejoId) || !is_numeric($complejoId) || $complejoId <= 0) ? null : (int)$complejoId;
+            $page = max(1, (int)$page);
+            $limit = max(1, (int)$limit);
+
+            $list = $this->contactoService->getContactosPaginatedByComplejo($complejoId, $page, $limit);
+            $this->sendResponse($list);
         } catch (Exception $e) {
             $this->sendError($e);
         }

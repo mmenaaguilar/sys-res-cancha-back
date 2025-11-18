@@ -15,97 +15,90 @@ class ServicioService
         $this->servicioRepository = new ServicioRepository();
     }
 
-    // --- VALIDACIÓN HELPER ---
-    private function validateServiceData(array &$data): void
+    // --- Helper de Paginación ---
+    private function formatPaginationResponse(array $result, int $page, int $limit): array
     {
-        if (empty($data['complejo_id']) || !is_numeric($data['complejo_id'])) {
-            throw new Exception("El ID del complejo es requerido.");
-        }
-        if (empty($data['tipo_deporte_id']) || !is_numeric($data['tipo_deporte_id'])) {
-            throw new Exception("El ID del tipo de deporte es requerido.");
-        }
-        if (empty($data['nombre'])) {
-            throw new Exception("El nombre del servicio es requerido.");
-        }
-        if (empty($data['monto']) || !is_numeric($data['monto']) || $data['monto'] < 0) {
-            throw new Exception("El monto debe ser un valor numérico positivo.");
-        }
+        $total = $result['total'];
 
-        // Sanitización y defaults
-        $data['is_obligatorio'] = $data['is_obligatorio'] ?? false;
-        $data['estado'] = $data['estado'] ?? 'activo';
+        // Calcular total de páginas
+        $totalPages = $limit > 0 ? ceil($total / $limit) : 0;
+        if ($total == 0) $totalPages = 1; // Si no hay datos, hay 1 página vacía.
 
-        if (!in_array($data['estado'], ['activo', 'inactivo'])) {
-            throw new Exception("El estado debe ser 'activo' o 'inactivo'.");
-        }
-    }
+        // Asegurar que la página actual no es mayor al total de páginas
+        $page = min($page, (int)$totalPages);
 
-    // --- READ ---
-    public function getServiciosByFilters(array $data): array
-    {
-        $complejoId = (int) ($data['complejo_id'] ?? 0);
-        $tipoDeporteId = isset($data['tipo_deporte_id']) ? (int) $data['tipo_deporte_id'] : null;
+        // Calcular next_page y prev_page
+        $hasNextPage = $page < $totalPages;
+        $hasPrevPage = $page > 1;
 
-        if ($complejoId <= 0) {
-            throw new Exception("ID de complejo inválido.");
-        }
+        return [
+            'total' => $total,
+            'per_page' => $limit,
+            'current_page' => $page,
+            'last_page' => (int)$totalPages,
 
-        try {
-            return $this->servicioRepository->listByFilters($complejoId, $tipoDeporteId);
-        } catch (Exception $e) {
-            throw new Exception("Error al listar servicios: " . $e->getMessage());
-        }
+            // ¡Nuevos campos booleanos!
+            'next_page' => $hasNextPage,
+            'prev_page' => $hasPrevPage,
+
+            'data' => $result['data']
+        ];
     }
 
     // --- CREATE ---
-    public function createService(array $data): int
+    public function createServicio(array $data): int
     {
-        $this->validateServiceData($data);
+        if (empty($data['complejo_id']) || empty($data['nombre']) || empty($data['monto']) || $data['monto'] <= 0) {
+            throw new Exception("Datos de servicio incompletos o inválidos (complejo_id, nombre, monto).", 400);
+        }
         return $this->servicioRepository->create($data);
     }
 
-    // --- UPDATE ---
-    public function updateService(int $id, array $data): bool
+    // --- READ (Listado Paginado con Filtros) ---
+    public function getServiciosPaginatedByFilters(?int $complejoId, ?string $searchTerm, int $page, int $limit): array
     {
-        if ($id <= 0) {
-            throw new Exception("ID de servicio inválido para la actualización.");
+        if ($complejoId === null || $complejoId <= 0) {
+            throw new Exception("El ID del complejo es requerido para listar servicios.", 400);
         }
-        $this->validateServiceData($data);
+        if ($limit <= 0) {
+            throw new Exception("El límite de resultados debe ser un número positivo.", 400);
+        }
+        $page = max(1, $page);
+        $offset = ($page - 1) * $limit;
+        $searchTerm = trim($searchTerm ?? '');
 
+        $result = $this->servicioRepository->getServiciosPaginatedByFilters($complejoId, $searchTerm, $limit, $offset);
+
+        return $this->formatPaginationResponse($result, $page, $limit);
+    }
+
+    // --- UPDATE ---
+    public function updateServicio(int $id, array $data): bool
+    {
         if (!$this->servicioRepository->getById($id)) {
-            throw new Exception("Servicio no encontrado.");
+            throw new Exception("Servicio no encontrado.", 404);
         }
-
+        if (empty($data['nombre']) || empty($data['monto']) || $data['monto'] <= 0) {
+            throw new Exception("Nombre o monto de servicio inválido.", 400);
+        }
         return $this->servicioRepository->update($id, $data);
     }
 
-    // --- DELETE ---
-    public function deleteService(int $id): bool
+    // --- CHANGE STATUS ---
+    public function changeServicioStatus(int $id): bool
     {
-        if ($id <= 0) {
-            throw new Exception("ID de servicio inválido para la eliminación.");
+        if (!$this->servicioRepository->getById($id)) {
+            throw new Exception("Servicio no encontrado.", 404);
         }
-        return $this->servicioRepository->delete($id);
+        return $this->servicioRepository->changeStatus($id);
     }
 
-    // --- CHANGE STATUS ---
-    public function changeStatus(int $id): array
+    // --- DELETE ---
+    public function deleteServicio(int $id): bool
     {
-        if ($id <= 0) {
-            throw new Exception("ID de servicio inválido.");
+        if (!$this->servicioRepository->getById($id)) {
+            throw new Exception("Servicio no encontrado.", 404);
         }
-
-        $servicio = $this->servicioRepository->getById($id);
-        if (!$servicio) {
-            throw new Exception("Servicio no encontrado.");
-        }
-
-        $nuevoEstado = ($servicio['estado'] === 'activo') ? 'inactivo' : 'activo';
-
-        if ($this->servicioRepository->changeStatus($id, $nuevoEstado)) {
-            return ['servicio_id' => $id, 'nuevo_estado' => $nuevoEstado];
-        }
-
-        throw new Exception("Error al cambiar el estado del servicio.");
+        return $this->servicioRepository->delete($id);
     }
 }
