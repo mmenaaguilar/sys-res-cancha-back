@@ -1,0 +1,130 @@
+<?php
+
+namespace App\Repositories;
+
+use App\Core\Database;
+use PDO;
+use PDOException;
+use Exception;
+
+class HorarioBaseRepository
+{
+    private PDO $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getConnection();
+    }
+
+    /**
+     * Obtener por ID
+     */
+    public function getById(int $id): ?array
+    {
+        $sql = "SELECT * FROM HorarioBase WHERE horario_base_id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
+     * Listado paginado con filtros
+     */
+    public function getPaginated(int $limit, int $offset, int $canchaId, ?string $diaSemana = null): array
+    {
+        $where = "WHERE cancha_id = :cancha_id";
+        $params = [':cancha_id' => $canchaId];
+
+        if (!empty($diaSemana)) {
+            $where .= " AND dia_semana = :dia_semana";
+            $params[':dia_semana'] = $diaSemana;
+        }
+
+        // Total
+        $totalSql = "SELECT COUNT(horario_base_id) AS total FROM HorarioBase $where";
+        $totalStmt = $this->db->prepare($totalSql);
+        $totalStmt->execute($params);
+        $total = (int)($totalStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+
+        // Data
+        $dataSql = "
+            SELECT * 
+            FROM HorarioBase 
+            $where
+            ORDER BY hora_inicio ASC
+            LIMIT :limit OFFSET :offset
+        ";
+
+        $dataStmt = $this->db->prepare($dataSql);
+        foreach ($params as $k => $v) {
+            $dataStmt->bindValue($k, $v);
+        }
+        $dataStmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $dataStmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $dataStmt->execute();
+
+        return [
+            'total' => $total,
+            'data' => $dataStmt->fetchAll(PDO::FETCH_ASSOC)
+        ];
+    }
+
+    /**
+     * Crear nuevo registro
+     */
+    public function create(array $data): int
+    {
+        $sql = "INSERT INTO HorarioBase
+                (cancha_id, dia_semana, hora_inicio, hora_fin, monto)
+                VALUES (:cancha_id, :dia_semana, :hora_inicio, :hora_fin, :monto)";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':cancha_id' => $data['cancha_id'],
+            ':dia_semana' => $data['dia_semana'],
+            ':hora_inicio' => $data['hora_inicio'],
+            ':hora_fin' => $data['hora_fin'],
+            ':monto' => $data['monto'],
+        ]);
+
+        return (int)$this->db->lastInsertId();
+    }
+
+    /**
+     * Actualizar
+     */
+    public function update(int $id, array $data): bool
+    {
+        $sql = "UPDATE HorarioBase 
+                SET cancha_id = :cancha_id,
+                    dia_semana = :dia_semana,
+                    hora_inicio = :hora_inicio,
+                    hora_fin = :hora_fin,
+                    monto = :monto
+                WHERE horario_base_id = :id";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':cancha_id' => $data['cancha_id'],
+            ':dia_semana' => $data['dia_semana'],
+            ':hora_inicio' => $data['hora_inicio'],
+            ':hora_fin' => $data['hora_fin'],
+            ':monto' => $data['monto'],
+            ':id' => $id
+        ]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Eliminar
+     */
+    public function delete(int $id): bool
+    {
+        $sql = "DELETE FROM HorarioBase WHERE horario_base_id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $id]);
+
+        return $stmt->rowCount() > 0;
+    }
+}

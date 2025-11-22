@@ -186,22 +186,11 @@ CREATE TABLE Reserva (
     hora_fin TIME NOT NULL,
     metodo_pago_id INT,
     total_pago DECIMAL(10,2) DEFAULT 0.00,
-    estado ENUM('pendiente','pagado','cancelado','finalizado') DEFAULT 'pendiente',
+    estado ENUM('pendiente','confirmada','cancelado') DEFAULT 'pendiente',
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (cancha_id) REFERENCES Cancha(cancha_id),
     FOREIGN KEY (usuario_id) REFERENCES Usuarios(usuario_id),
     FOREIGN KEY (metodo_pago_id) REFERENCES MetodoPago(metodo_pago_id)
-);
-
-CREATE TABLE ReservaServicios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    reserva_id INT NOT NULL,
-    servicio_id INT NOT NULL,
-    cantidad INT DEFAULT 1,
-    precio_unitario DECIMAL(10,2) NOT NULL,
-    subtotal DECIMAL(10,2) NOT NULL,
-    FOREIGN KEY (reserva_id) REFERENCES Reserva(reserva_id) ON DELETE CASCADE,
-    FOREIGN KEY (servicio_id) REFERENCES Servicios(servicio_id)
 );
 
 -- ##################################################################

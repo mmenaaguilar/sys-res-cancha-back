@@ -29,7 +29,7 @@ $router->put('/api/servicios/{id}', 'ServicioController@update');
 $router->put('/api/servicios/status/{id}', 'ServicioController@changeStatus');
 $router->delete('/api/servicios/{id}', 'ServicioController@delete');
 
-// Rutas para la gestión de ServicioPorDeporte
+// Rutas para la gestión de ServicioPorHorario
 $router->post('/api/servicio-horarios/list', 'ServicioPorHorarioController@listByFilters');
 $router->post('/api/servicio-horarios', 'ServicioPorHorarioController@create');
 $router->put('/api/servicio-horarios/{id}', 'ServicioPorHorarioController@update');
@@ -50,6 +50,12 @@ $router->put('/api/usuario-roles/{id}', 'UsuarioRolController@update');
 $router->put('/api/usuario-roles/status/{id}', 'UsuarioRolController@changeStatus'); 
 $router->delete('/api/usuario-roles/{id}', 'UsuarioRolController@delete');
 
+// RUTAS PARA LA GESTIÓN DE HORARIO BASE
+$router->post('/api/horario-base/list', 'HorarioBaseController@getPaginated');
+$router->post('/api/horario-base', 'HorarioBaseController@create');
+$router->put('/api/horario-base/{id}', 'HorarioBaseController@update');
+$router->put('/api/horario-base/status/{id}', 'HorarioBaseController@changeStatus');
+$router->delete('/api/horario-base/{id}', 'HorarioBaseController@delete');
 
 // Rutas para la gestión de Usuarios (MOVIDAS/AÑADIDAS AQUÍ)
 $router->post('/api/usuarios/list', 'UsuarioController@getUsuariosPaginated');
