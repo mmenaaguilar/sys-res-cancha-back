@@ -1,63 +1,85 @@
 <?php
-// app/Controllers/ComplejoDeportivoController.php
 
 namespace App\Controllers;
 
 use App\Services\ComplejoDeportivoService;
+use App\Core\Helpers\ApiHelper;
 use Exception;
 
-class ComplejoDeportivoController
+class ComplejoDeportivoController extends ApiHelper
 {
-    private ComplejoDeportivoService $complejoDeportivoService;
+    private ComplejoDeportivoService $service;
 
     public function __construct()
     {
-        $this->complejoDeportivoService = new ComplejoDeportivoService();
+        $this->service = new ComplejoDeportivoService();
     }
 
-    /**
-     * Maneja la solicitud GET /api/complejos/search?q={ubicacion}
-     * Busca complejos por coincidencia en Departamento, Provincia o Distrito.
-     * @return void
-     */
-    public function search()
+    public function getComplejo()
     {
-        header('Content-Type: application/json');
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-            http_response_code(405);
-            echo json_encode(['error' => 'Método no permitido. Use GET.']);
-            return;
-        }
-
-        // 1. Obtener el término de búsqueda
-        $term = $_GET['q'] ?? '';
-
         try {
-            // 2. Llamar al Service
-            $data = $this->complejoDeportivoService->findComplejosByUbicacion($term);
+            // Obtener complejo_id desde el body si se envía
+            $data = $this->initRequest('POST');
+            if ($data === null) return;
+             $complejoId = $data['complejo_id'] ?? null;
 
-            // Manejo de la validación del término corto (desde el servicio)
-            if (empty($data) && strlen(trim($term)) > 0 && strlen(trim($term)) < 3) {
-                http_response_code(400);
-                echo json_encode(['error' => 'El término de búsqueda debe tener al menos 3 caracteres para Ubigeo.']);
+
+            if (empty($complejoId)) {
+                $this->sendError(new Exception("El campo 'complejo_id' es requerido en el cuerpo de la solicitud."), 400);
                 return;
             }
 
-            // 3. Respuesta exitosa
-            http_response_code(200);
-            echo json_encode([
-                'success' => true,
-                'total' => count($data),
-                'data' => $data
-            ]);
+            $complejos = $this->service->getAll($complejoId);
+            $this->sendResponse($complejos);
         } catch (Exception $e) {
-            // 4. Manejo de errores
-            http_response_code(500);
-            echo json_encode([
-                'error' => 'Error interno del servidor durante la búsqueda.',
-                'detail' => $e->getMessage()
-            ]);
+            $this->sendError($e);
+        }
+    }
+
+
+    public function create()
+    {
+        $data = $this->initRequest('POST');
+        if ($data === null) return;
+
+        try {
+            $id = $this->service->create($data);
+            $this->sendResponse(['complejo_id' => $id], 201);
+        } catch (Exception $e) {
+            $this->sendError($e);
+        }
+    }
+
+    public function update(int $id)
+    {
+        $data = $this->initRequest('PUT');
+        if ($data === null) return;
+
+        try {
+            $this->service->update($id, $data);
+            $this->sendResponse(['complejo_id' => $id, 'mensaje' => 'Actualizado correctamente']);
+        } catch (Exception $e) {
+            $this->sendError($e);
+        }
+    }
+
+    public function changeStatus(int $id)
+    {
+        try {
+            $result = $this->service->changeStatus($id);
+            $this->sendResponse($result);
+        } catch (Exception $e) {
+            $this->sendError($e);
+        }
+    }
+
+    public function delete(int $id)
+    {
+        try {
+            $this->service->delete($id);
+            $this->sendResponse(['complejo_id' => $id, 'mensaje' => 'Eliminado correctamente']);
+        } catch (Exception $e) {
+            $this->sendError($e);
         }
     }
 }

@@ -1,5 +1,4 @@
 <?php
-// app/Services/ComplejoDeportivoService.php
 
 namespace App\Services;
 
@@ -8,34 +7,73 @@ use Exception;
 
 class ComplejoDeportivoService
 {
-    private ComplejoDeportivoRepository $complejoDeportivoRepository;
+    private ComplejoDeportivoRepository $repository;
 
     public function __construct()
     {
-        $this->complejoDeportivoRepository = new ComplejoDeportivoRepository();
+        $this->repository = new ComplejoDeportivoRepository();
     }
 
-    /**
-     * Busca y obtiene complejos deportivos activos por su ubicación (Departamento, Provincia o Distrito).
-     * @param string $term Término de búsqueda.
-     * @return array
-     */
-    public function findComplejosByUbicacion(string $term): array
+    public function getAll(?int $complejoId = null): array
     {
-        $term = trim($term);
+        return $this->repository->getAll($complejoId);
+    }
 
-        // Lógica de Negocio: Requerir un mínimo de 3 caracteres
-        if (strlen($term) < 3) {
-            // Devolvemos un array vacío o lanzamos una excepción si el término es muy corto
-            return [];
+
+    public function getById(int $id): array
+    {
+        $complejo = $this->repository->getById($id);
+        if (!$complejo) throw new Exception("Complejo no encontrado.");
+        return $complejo;
+    }
+
+    public function create(array $data): int
+    {
+        $this->validate($data);
+        return $this->repository->create($data);
+    }
+
+    public function update(int $id, array $data): bool
+    {
+        if (!$this->repository->getById($id)) {
+            throw new Exception("Complejo no encontrado.");
+        }
+        $this->validate($data);
+        return $this->repository->update($id, $data);
+    }
+
+    public function changeStatus(int $id): array
+    {
+        $complejo = $this->repository->getById($id);
+        if (!$complejo) throw new Exception("Complejo no encontrado.");
+
+        $nuevoEstado = $complejo['estado'] === 'activo' ? 'inactivo' : 'activo';
+
+        if ($this->repository->changeStatus($id, $nuevoEstado)) {
+            return [
+                'complejo_id' => $id,
+                'nuevo_estado' => $nuevoEstado
+            ];
         }
 
-        try {
-            // Llamar al Repositorio para obtener los resultados
-            return $this->complejoDeportivoRepository->searchByUbicacion($term);
-        } catch (Exception $e) {
-            // Podrías loguear el error aquí
-            throw new Exception("Fallo en la lógica de búsqueda del complejo: " . $e->getMessage());
+        throw new Exception("Error al cambiar el estado del complejo.");
+    }
+
+    public function delete(int $id): bool
+    {
+        if (!$this->repository->getById($id)) {
+            throw new Exception("Complejo no encontrado.");
+        }
+        return $this->repository->delete($id);
+    }
+
+    private function validate(array &$data): void
+    {
+        if (empty($data['nombre'])) {
+            throw new Exception("El nombre del complejo es requerido.");
+        }
+        if (empty($data['estado'])) {
+            $data['estado'] = 'activo';
         }
     }
 }

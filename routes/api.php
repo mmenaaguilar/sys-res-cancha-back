@@ -1,10 +1,6 @@
 <?php
 // routes/api.php
 
-// Definición de una ruta de prueba: GET /api/status
-// Esto verifica si el router y el controller están funcionando.
-
-// Asume que la variable $router ya está disponible (instanciada en index.php)
 
 $router->post('/api/register', 'AuthController@register');
 $router->post('/api/login', 'AuthController@login');
@@ -60,3 +56,20 @@ $router->delete('/api/horario-base/{id}', 'HorarioBaseController@delete');
 // Rutas para la gestión de Usuarios (MOVIDAS/AÑADIDAS AQUÍ)
 $router->post('/api/usuarios/list', 'UsuarioController@getUsuariosPaginated');
 $router->put('/api/usuarios/{id}', 'UsuarioController@update');
+
+// RUTA PARA VALIDAR DISPONIBILIDAD
+$router->post('/api/alquiler/validar-disponibilidad', 'AlquilerController@validarDisponibilidad');
+
+// Rutas para la gestión de Canchas
+$router->post('/api/canchas/list', 'CanchaController@listByComplejo');      
+$router->post('/api/canchas', 'CanchaController@create');                   
+$router->put('/api/canchas/{id}', 'CanchaController@update');               
+$router->put('/api/canchas/status/{id}', 'CanchaController@changeStatus');  
+$router->delete('/api/canchas/{id}', 'CanchaController@delete');
+
+// Rutas para la gestión de ComplejoDeportivo
+$router->post('/api/complejos/list', 'ComplejoDeportivoController@getComplejo');
+$router->post('/api/complejos', 'ComplejoDeportivoController@create');
+$router->put('/api/complejos/{id}', 'ComplejoDeportivoController@update');
+$router->put('/api/complejos/status/{id}', 'ComplejoDeportivoController@changeStatus');
+$router->delete('/api/complejos/{id}', 'ComplejoDeportivoController@delete');

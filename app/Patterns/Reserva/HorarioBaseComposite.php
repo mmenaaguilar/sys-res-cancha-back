@@ -49,6 +49,7 @@ class HorarioBaseComposite implements ComponenteReserva
         string $horaInicio,
         string $horaFin
     ): bool {
+
         foreach ($this->componentes as $componente) {
             $disponible = $componente->validarDisponibilidad(
                 $canchaId,

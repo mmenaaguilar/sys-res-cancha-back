@@ -1,9 +1,8 @@
 <?php
-// app/Repositories/ComplejoDeportivoRepository.php
 
 namespace App\Repositories;
 
-use App\Core\Database; // Clase de conexión asumida
+use App\Core\Database;
 use PDO;
 use Exception;
 
@@ -17,52 +16,122 @@ class ComplejoDeportivoRepository
     }
 
     /**
-     * Busca complejos deportivos por coincidencia parcial en el nombre del 
-     * Departamento, Provincia o Distrito al que pertenecen.
-     * @param string $term Término de búsqueda (ej. 'Tacna', 'Lima').
-     * @return array
+     * Obtiene un complejo por su ID.
      */
-    public function searchByUbicacion(string $term): array
+    public function getById(int $id): ?array
     {
-        try {
-            // 1. Prepara el término para la búsqueda LIKE: %término%
-            $search_term = "%{$term}%";
+        $sql = "SELECT * FROM ComplejoDeportivo WHERE complejo_id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
 
-            $sql = "
-                SELECT 
-                    CD.complejo_id, 
-                    CD.nombre, 
-                    CD.direccion_detalle,
-                    D.nombre AS departamento_nombre,
-                    P.nombre AS provincia_nombre,
-                    DI.nombre AS distrito_nombre,
-                    CD.url_imagen
-                FROM ComplejoDeportivo CD
-                -- Joins a las tablas de Ubigeo
-                INNER JOIN Departamento D ON CD.departamento_id = D.departamento_id
-                INNER JOIN Provincia P ON CD.provincia_id = P.provincia_id
-                INNER JOIN Distrito DI ON CD.distrito_id = DI.distrito_id
-                WHERE 
-                    (
-                        D.nombre LIKE :term 
-                        OR P.nombre LIKE :term 
-                        OR DI.nombre LIKE :term
-                    )
-                    AND CD.eliminado = 0 
-                    AND CD.estado = 'activo'
-                ORDER BY CD.nombre ASC
-                LIMIT 20
-            ";
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
 
+    /**
+     * Obtiene todos los complejos activos.
+     */
+    public function getAll(?int $complejoId = null): array
+    {
+        if ($complejoId !== null) {
+            $sql = "SELECT * FROM ComplejoDeportivo WHERE complejo_id = :id";
             $stmt = $this->db->prepare($sql);
-            // Usamos el mismo placeholder :term para los tres campos en la cláusula WHERE
-            $stmt->bindParam(':term', $search_term);
+            $stmt->bindParam(':id', $complejoId, PDO::PARAM_INT);
             $stmt->execute();
-
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result ? [$result] : [];
+        } else {
+            $sql = "SELECT * FROM ComplejoDeportivo ORDER BY nombre ASC";
+            $stmt = $this->db->query($sql);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
-            // Lanza una excepción para que la capa de Servicio la maneje
-            throw new Exception("DB Error: Búsqueda fallida en Ubigeo. " . $e->getMessage());
         }
+    }
+
+
+    /**
+     * Crea un nuevo complejo.
+     */
+    public function create(array $data): int
+    {
+        $sql = "INSERT INTO ComplejoDeportivo 
+                (nombre, departamento_id, provincia_id, distrito_id, direccion_detalle, url_imagen, url_map, descripcion, estado)
+                VALUES (:nombre, :departamento_id, :provincia_id, :distrito_id, :direccion_detalle, :url_imagen, :url_map, :descripcion, :estado)";
+
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->bindParam(':nombre', $data['nombre']);
+        $stmt->bindParam(':departamento_id', $data['departamento_id']);
+        $stmt->bindParam(':provincia_id', $data['provincia_id']);
+        $stmt->bindParam(':distrito_id', $data['distrito_id']);
+        $stmt->bindParam(':direccion_detalle', $data['direccion_detalle']);
+        $stmt->bindParam(':url_imagen', $data['url_imagen']);
+        $stmt->bindParam(':url_map', $data['url_map']);
+        $stmt->bindParam(':descripcion', $data['descripcion']);
+        $stmt->bindParam(':estado', $data['estado']);
+
+        if ($stmt->execute()) {
+            return (int)$this->db->lastInsertId();
+        }
+
+        throw new Exception("Error al crear el complejo deportivo.");
+    }
+
+    /**
+     * Actualiza un complejo existente.
+     */
+    public function update(int $id, array $data): bool
+    {
+        $sql = "UPDATE ComplejoDeportivo
+                SET nombre = :nombre,
+                    departamento_id = :departamento_id,
+                    provincia_id = :provincia_id,
+                    distrito_id = :distrito_id,
+                    direccion_detalle = :direccion_detalle,
+                    url_imagen = :url_imagen,
+                    url_map = :url_map,
+                    descripcion = :descripcion,
+                    estado = :estado
+                WHERE complejo_id = :id";
+
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->bindParam(':nombre', $data['nombre']);
+        $stmt->bindParam(':departamento_id', $data['departamento_id']);
+        $stmt->bindParam(':provincia_id', $data['provincia_id']);
+        $stmt->bindParam(':distrito_id', $data['distrito_id']);
+        $stmt->bindParam(':direccion_detalle', $data['direccion_detalle']);
+        $stmt->bindParam(':url_imagen', $data['url_imagen']);
+        $stmt->bindParam(':url_map', $data['url_map']);
+        $stmt->bindParam(':descripcion', $data['descripcion']);
+        $stmt->bindParam(':estado', $data['estado']);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    /**
+     * Cambia el estado del complejo.
+     */
+    public function changeStatus(int $id, string $estado): bool
+    {
+        $sql = "UPDATE ComplejoDeportivo SET estado = :estado WHERE complejo_id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':estado', $estado);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    /**
+     * Elimina un complejo.
+     */
+    public function delete(int $id): bool
+    {
+        $sql = "DELETE FROM ComplejoDeportivo WHERE complejo_id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
     }
 }

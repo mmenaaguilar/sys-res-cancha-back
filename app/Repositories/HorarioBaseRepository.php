@@ -69,6 +69,30 @@ class HorarioBaseRepository
         ];
     }
 
+    public function getHorariosByCanchaAndDia($canchaId, $diaSemana, $horaFiltro)
+    {
+        $params = [
+            'cancha' => $canchaId,
+            'dia' => $diaSemana
+        ];
+
+        $sql = "SELECT * FROM HorarioBase
+            WHERE cancha_id = :cancha
+              AND dia_semana = :dia";
+
+        if ($horaFiltro !== '') {
+            $sql .= " AND hora_inicio <= :hora
+                  AND hora_fin > :hora";
+            $params['hora'] = $horaFiltro;
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+
     /**
      * Crear nuevo registro
      */
