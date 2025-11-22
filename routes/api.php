@@ -10,10 +10,10 @@ $router->post('/api/register', 'AuthController@register');
 $router->post('/api/login', 'AuthController@login');
 
 // Rutas para listados (Combos)
-$router->get('/api/combos/roles', 'UsuarioRolController@getRolesCombo');
+$router->get('/api/roles/combos', 'UsuarioRolController@getRolesCombo');
 $router->get('/api/tipo-deporte/combo', 'TipoDeporteController@combo');
 $router->get('/api/ubigeo/search', 'UbigeoController@search');
-$router->post('/api/complejos/search-available', 'ComplejoDeportivoController@searchAvailable');
+// $router->post('/api/complejos/search-available', 'ComplejoDeportivoController@searchAvailable');
 
 // Rutas para la gestión de Contactos
 $router->post('/api/contactos/list', 'ContactoController@listByComplejo');
@@ -30,11 +30,11 @@ $router->put('/api/servicios/status/{id}', 'ServicioController@changeStatus');
 $router->delete('/api/servicios/{id}', 'ServicioController@delete');
 
 // Rutas para la gestión de ServicioPorDeporte
-$router->post('/api/servicio-deportes/list', 'ServicioPorDeporteController@listByFilters');
-$router->post('/api/servicio-deportes', 'ServicioPorDeporteController@create');
-$router->put('/api/servicio-deportes/{id}', 'ServicioPorDeporteController@update');
-$router->put('/api/servicio-deportes/status/{id}', 'ServicioPorDeporteController@changeStatus');
-$router->delete('/api/servicio-deportes/{id}', 'ServicioPorDeporteController@delete');
+$router->post('/api/servicio-horarios/list', 'ServicioPorHorarioController@listByFilters');
+$router->post('/api/servicio-horarios', 'ServicioPorHorarioController@create');
+$router->put('/api/servicio-horarios/{id}', 'ServicioPorHorarioController@update');
+$router->put('/api/servicio-horarios/status/{id}', 'ServicioPorHorarioController@changeStatus');
+$router->delete('/api/servicio-horarios/{id}', 'ServicioPorHorarioController@delete');
 
 // Rutas para la gestión de Políticas de Cancelación
 $router->post('/api/politicas/list', 'PoliticaController@getByComplejo');

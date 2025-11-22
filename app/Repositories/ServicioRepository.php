@@ -20,15 +20,14 @@ class ServicioRepository
     // --- CREATE ---
     public function create(array $data): int
     {
-        $sql = "INSERT INTO Servicios (complejo_id, nombre, descripcion, monto, is_obligatorio, estado) 
-                VALUES (:complejo_id, :nombre, :descripcion, :monto, :is_obligatorio, :estado)";
+        $sql = "INSERT INTO Servicios (complejo_id, nombre, descripcion, monto, estado) 
+                VALUES (:complejo_id, :nombre, :descripcion, :monto, :estado)";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             ':complejo_id' => $data['complejo_id'],
             ':nombre' => $data['nombre'],
             ':descripcion' => $data['descripcion'] ?? null,
             ':monto' => $data['monto'],
-            ':is_obligatorio' => $data['is_obligatorio'] ?? 0,
             ':estado' => $data['estado'] ?? 'activo'
         ]);
         return (int)$this->db->lastInsertId();
@@ -99,7 +98,7 @@ class ServicioRepository
     public function update(int $id, array $data): bool
     {
         $sql = "UPDATE Servicios 
-                SET nombre = :nombre, descripcion = :descripcion, monto = :monto, is_obligatorio = :is_obligatorio 
+                SET nombre = :nombre, descripcion = :descripcion, monto = :monto
                 WHERE servicio_id = :id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([

@@ -129,17 +129,8 @@ CREATE TABLE Servicios (
     nombre VARCHAR(100) NOT NULL,
     descripcion TEXT,
     monto DECIMAL(10,2) NOT NULL,
-    is_obligatorio BOOLEAN DEFAULT FALSE,
     estado ENUM('activo', 'inactivo') DEFAULT 'activo',
     FOREIGN KEY (complejo_id) REFERENCES ComplejoDeportivo(complejo_id) ON DELETE CASCADE
-);
-
-CREATE TABLE ServicioPorDeporte (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    servicio_id INT NOT NULL,
-    tipo_deporte_id INT NOT NULL,
-    FOREIGN KEY (servicio_id) REFERENCES Servicios(servicio_id) ON DELETE CASCADE,
-    FOREIGN KEY (tipo_deporte_id) REFERENCES TipoDeporte(tipo_deporte_id)
 );
 
 -- ##################################################################
@@ -166,6 +157,15 @@ CREATE TABLE HorarioEspecial (
     estado ENUM('disponible','bloqueado','mantenimiento'),
     descripcion VARCHAR(255),
     FOREIGN KEY (cancha_id) REFERENCES Cancha(cancha_id) ON DELETE CASCADE
+);
+
+CREATE TABLE ServicioPorHorario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    servicio_id INT NOT NULL,
+    horarioBase_id INT NOT NULL,
+    estado ENUM('activo', 'inactivo') DEFAULT 'activo',
+    FOREIGN KEY (servicio_id) REFERENCES Servicios(servicio_id) ON DELETE CASCADE,
+    FOREIGN KEY (horarioBase_id) REFERENCES HorarioBase(horario_base_id)
 );
 
 -- ##################################################################
