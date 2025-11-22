@@ -56,6 +56,55 @@ class CanchaRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getByComplejoPaginated(
+        int $complejoId,
+        ?int $tipoDeporteId = null,
+        ?string $searchTerm = null,
+        int $limit = 10,
+        int $offset = 0
+    ): array {
+        $params = [':complejo_id' => $complejoId];
+        $whereSql = " WHERE complejo_id = :complejo_id";
+
+        if ($tipoDeporteId !== null && $tipoDeporteId > 0) {
+            $whereSql .= " AND tipo_deporte_id = :tipo_deporte_id";
+            $params[':tipo_deporte_id'] = $tipoDeporteId;
+        }
+
+        if (!empty($searchTerm)) {
+            $whereSql .= " AND (nombre LIKE :search OR descripcion LIKE :search)";
+            $params[':search'] = '%' . $searchTerm . '%';
+        }
+
+        // Conteo total
+        $totalStmt = $this->db->prepare("SELECT COUNT(*) AS total FROM Cancha" . $whereSql);
+        foreach ($params as $key => $value) {
+            $totalStmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $totalStmt->execute();
+        $total = (int)$totalStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+        // Datos paginados
+        $stmt = $this->db->prepare(
+            "SELECT cancha_id, complejo_id, tipo_deporte_id, nombre, url_imagen, descripcion, estado
+         FROM Cancha
+         $whereSql
+         ORDER BY cancha_id ASC
+         LIMIT :limit OFFSET :offset"
+        );
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'total' => $total,
+            'data' => $data
+        ];
+    }
 
 
     /**

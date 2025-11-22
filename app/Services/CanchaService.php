@@ -35,6 +35,34 @@ class CanchaService
         }
     }
 
+    private function formatPaginationResponse(array $result, int $page, int $limit): array
+    {
+        $total = $result['total'];
+
+        // Calcular total de páginas
+        $totalPages = $limit > 0 ? ceil($total / $limit) : 0;
+        if ($total == 0) $totalPages = 1; // Si no hay datos, hay 1 página vacía.
+
+        // Asegurar que la página actual no es mayor al total de páginas
+        $page = min($page, (int)$totalPages);
+
+        // Calcular next_page y prev_page
+        $hasNextPage = $page < $totalPages;
+        $hasPrevPage = $page > 1;
+
+        return [
+            'total' => $total,
+            'per_page' => $limit,
+            'current_page' => $page,
+            'last_page' => (int)$totalPages,
+
+            // ¡Nuevos campos booleanos!
+            'next_page' => $hasNextPage,
+            'prev_page' => $hasPrevPage,
+
+            'data' => $result['data']
+        ];
+    }
     /**
      * Obtiene canchas activas por complejo.
      */
@@ -44,6 +72,26 @@ class CanchaService
             throw new Exception("ID de complejo inválido.");
         }
         return $this->canchaRepository->getByComplejo($complejoId);
+    }
+
+    public function getByComplejoPaginated(
+        int $complejoId,
+        ?int $tipoDeporteId = null,
+        ?string $searchTerm = null,
+        int $page = 1,
+        int $limit = 10
+    ): array {
+        if ($complejoId <= 0) {
+            throw new Exception("ID de complejo inválido.");
+        }
+
+        $page = max(1, $page);
+        $offset = ($page - 1) * $limit;
+        $searchTerm = trim($searchTerm ?? '');
+
+        $result = $this->canchaRepository->getByComplejoPaginated($complejoId, $tipoDeporteId, $searchTerm, $limit, $offset);
+
+        return $this->formatPaginationResponse($result, $page, $limit);
     }
 
     /**

@@ -36,6 +36,30 @@ class CanchaController extends ApiHelper
         }
     }
 
+    public function listByComplejoPaginated()
+    {
+        $data = $this->initRequest('POST');
+        if ($data === null) return;
+
+        $complejoId = $data['complejo_id'] ?? null;
+        $tipoDeporteId = $data['tipo_deporte_id'] ?? null;
+        $searchTerm = $data['searchTerm'] ?? null;
+        $page = $data['page'] ?? 1;
+        $limit = $data['limit'] ?? 10;
+
+        try {
+            $complejoId = (empty($complejoId) || !is_numeric($complejoId) || $complejoId <= 0) ? null : (int)$complejoId;
+            $tipoDeporteId = (!empty($tipoDeporteId) && is_numeric($tipoDeporteId) && $tipoDeporteId > 0) ? (int)$tipoDeporteId : null;
+            $page = max(1, (int)$page);
+            $limit = max(1, (int)$limit);
+
+            $list = $this->canchaService->getByComplejoPaginated($complejoId, $tipoDeporteId, $searchTerm, $page, $limit);
+            $this->sendResponse($list);
+        } catch (Exception $e) {
+            $this->sendError($e);
+        }
+    }
+
     /**
      * [CREATE] Crear una nueva cancha.
      */

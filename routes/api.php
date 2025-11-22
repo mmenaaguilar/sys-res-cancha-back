@@ -61,7 +61,7 @@ $router->put('/api/usuarios/{id}', 'UsuarioController@update');
 $router->post('/api/alquiler/validar-disponibilidad', 'AlquilerController@validarDisponibilidad');
 
 // Rutas para la gestión de Canchas
-$router->post('/api/canchas/list', 'CanchaController@listByComplejo');      
+$router->post('/api/canchas/list', 'CanchaController@listByComplejoPaginated');
 $router->post('/api/canchas', 'CanchaController@create');                   
 $router->put('/api/canchas/{id}', 'CanchaController@update');               
 $router->put('/api/canchas/status/{id}', 'CanchaController@changeStatus');  
