@@ -15,9 +15,6 @@ class ComplejoDeportivoRepository
         $this->db = Database::getConnection();
     }
 
-    /**
-     * Obtiene un complejo por su ID.
-     */
     public function getById(int $id): ?array
     {
         $sql = "SELECT * FROM ComplejoDeportivo WHERE complejo_id = :id";
@@ -29,9 +26,6 @@ class ComplejoDeportivoRepository
         return $result ?: null;
     }
 
-    /**
-     * Obtiene todos los complejos activos.
-     */
     public function getAll(?int $complejoId = null): array
     {
         if ($complejoId !== null) {
@@ -48,10 +42,6 @@ class ComplejoDeportivoRepository
         }
     }
 
-
-    /**
-     * Crea un nuevo complejo.
-     */
     public function create(array $data): int
     {
         $sql = "INSERT INTO ComplejoDeportivo 
@@ -59,7 +49,6 @@ class ComplejoDeportivoRepository
                 VALUES (:nombre, :departamento_id, :provincia_id, :distrito_id, :direccion_detalle, :url_imagen, :url_map, :descripcion, :estado)";
 
         $stmt = $this->db->prepare($sql);
-
         $stmt->bindParam(':nombre', $data['nombre']);
         $stmt->bindParam(':departamento_id', $data['departamento_id']);
         $stmt->bindParam(':provincia_id', $data['provincia_id']);
@@ -77,9 +66,6 @@ class ComplejoDeportivoRepository
         throw new Exception("Error al crear el complejo deportivo.");
     }
 
-    /**
-     * Actualiza un complejo existente.
-     */
     public function update(int $id, array $data): bool
     {
         $sql = "UPDATE ComplejoDeportivo
@@ -95,7 +81,6 @@ class ComplejoDeportivoRepository
                 WHERE complejo_id = :id";
 
         $stmt = $this->db->prepare($sql);
-
         $stmt->bindParam(':nombre', $data['nombre']);
         $stmt->bindParam(':departamento_id', $data['departamento_id']);
         $stmt->bindParam(':provincia_id', $data['provincia_id']);
@@ -110,9 +95,6 @@ class ComplejoDeportivoRepository
         return $stmt->execute();
     }
 
-    /**
-     * Cambia el estado del complejo.
-     */
     public function changeStatus(int $id, string $estado): bool
     {
         $sql = "UPDATE ComplejoDeportivo SET estado = :estado WHERE complejo_id = :id";
@@ -123,9 +105,6 @@ class ComplejoDeportivoRepository
         return $stmt->execute();
     }
 
-    /**
-     * Elimina un complejo.
-     */
     public function delete(int $id): bool
     {
         $sql = "DELETE FROM ComplejoDeportivo WHERE complejo_id = :id";

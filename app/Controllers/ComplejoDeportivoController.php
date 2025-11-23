@@ -18,14 +18,11 @@ class ComplejoDeportivoController extends ApiHelper
     public function getComplejo()
     {
         try {
-            // Obtener complejo_id desde el body si se envía
             $data = $this->initRequest('POST');
             if ($data === null) return;
-             $complejoId = $data['complejo_id'] ?? null;
-
-
+            $complejoId = $data['complejo_id'] ?? null;
             if (empty($complejoId)) {
-                $this->sendError(new Exception("El campo 'complejo_id' es requerido en el cuerpo de la solicitud."), 400);
+                $this->sendError(new Exception("El campo 'complejo_id' es requerido."), 400);
                 return;
             }
 
@@ -36,14 +33,14 @@ class ComplejoDeportivoController extends ApiHelper
         }
     }
 
-
     public function create()
     {
         $data = $this->initRequest('POST');
         if ($data === null) return;
+        $file = $_FILES['imagen'] ?? null;
 
         try {
-            $id = $this->service->create($data);
+            $id = $this->service->create($data, $file);
             $this->sendResponse(['complejo_id' => $id], 201);
         } catch (Exception $e) {
             $this->sendError($e);
@@ -54,9 +51,10 @@ class ComplejoDeportivoController extends ApiHelper
     {
         $data = $this->initRequest('PUT');
         if ($data === null) return;
+        $file = $_FILES['imagen'] ?? null;
 
         try {
-            $this->service->update($id, $data);
+            $this->service->update($id, $data, $file);
             $this->sendResponse(['complejo_id' => $id, 'mensaje' => 'Actualizado correctamente']);
         } catch (Exception $e) {
             $this->sendError($e);

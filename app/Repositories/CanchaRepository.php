@@ -112,15 +112,14 @@ class CanchaRepository
      */
     public function create(array $data): int
     {
-        $sql = "INSERT INTO Cancha (complejo_id, tipo_deporte_id, nombre, url_imagen, descripcion, estado)
-                VALUES (:complejo_id, :tipo_deporte_id, :nombre, :url_imagen, :descripcion, :estado)";
+        $sql = "INSERT INTO Cancha (complejo_id, tipo_deporte_id, nombre, descripcion, estado)
+                VALUES (:complejo_id, :tipo_deporte_id,  :descripcion, :estado)";
 
         $stmt = $this->db->prepare($sql);
 
         $stmt->bindParam(':complejo_id', $data['complejo_id'], PDO::PARAM_INT);
         $stmt->bindParam(':tipo_deporte_id', $data['tipo_deporte_id'], PDO::PARAM_INT);
         $stmt->bindParam(':nombre', $data['nombre']);
-        $stmt->bindParam(':url_imagen', $data['url_imagen']);
         $stmt->bindParam(':descripcion', $data['descripcion']);
         $stmt->bindParam(':estado', $data['estado']);
 

@@ -94,7 +94,6 @@ CREATE TABLE Cancha (
     complejo_id INT NOT NULL,
     tipo_deporte_id INT NOT NULL,
     nombre VARCHAR(100) NOT NULL,
-    url_imagen VARCHAR(500),
     descripcion TEXT,
     estado ENUM('activo', 'inactivo') DEFAULT 'activo',
     FOREIGN KEY (complejo_id) REFERENCES ComplejoDeportivo(complejo_id) ON DELETE CASCADE,
@@ -181,19 +180,37 @@ CREATE TABLE MetodoPago (
 
 CREATE TABLE Reserva (
     reserva_id INT AUTO_INCREMENT PRIMARY KEY,
-    cancha_id INT NOT NULL,
     usuario_id INT NOT NULL,
-    fecha DATE NOT NULL,
-    hora_inicio TIME NOT NULL,
-    hora_fin TIME NOT NULL,
     metodo_pago_id INT,
     total_pago DECIMAL(10,2) DEFAULT 0.00,
-    estado ENUM('pendiente','confirmada','cancelado') DEFAULT 'pendiente',
+
+    -- ESTADOS DE LA RESERVA
+    estado ENUM('pendiente_pago', 'confirmada', 'cancelado') DEFAULT 'pendiente_pago',
+
+    -- CAMPOS DE IZIPAY
+    izipay_token VARCHAR(200) NULL,
+    izipay_estado ENUM('pendiente', 'iniciado', 'pagado', 'fallido') DEFAULT 'pendiente',
+    fecha_pago DATETIME NULL,
+
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (cancha_id) REFERENCES Cancha(cancha_id),
+
     FOREIGN KEY (usuario_id) REFERENCES Usuarios(usuario_id),
     FOREIGN KEY (metodo_pago_id) REFERENCES MetodoPago(metodo_pago_id)
 );
+
+CREATE TABLE ReservaDetalle (
+    detalle_id INT AUTO_INCREMENT PRIMARY KEY,
+    reserva_id INT NOT NULL,
+    cancha_id INT NOT NULL,
+    fecha DATE NOT NULL,
+    hora_inicio TIME NOT NULL,
+    hora_fin TIME NOT NULL,
+    precio DECIMAL(10,2) NOT NULL,
+
+    FOREIGN KEY (reserva_id) REFERENCES Reserva(reserva_id) ON DELETE CASCADE,
+    FOREIGN KEY (cancha_id) REFERENCES Cancha(cancha_id)
+);
+
 
 -- ##################################################################
 -- CALIFICACIONES, FAVORITOS y POLÍTICAS
