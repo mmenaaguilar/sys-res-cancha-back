@@ -52,6 +52,7 @@ $router->post('/api/horario-base', 'HorarioBaseController@create');
 $router->put('/api/horario-base/{id}', 'HorarioBaseController@update');
 $router->put('/api/horario-base/status/{id}', 'HorarioBaseController@changeStatus');
 $router->delete('/api/horario-base/{id}', 'HorarioBaseController@delete');
+$router->post('/api/horario-base/clone', 'HorarioBaseController@cloneByDia');
 
 // Rutas para la gestión de Usuarios (MOVIDAS/AÑADIDAS AQUÍ)
 $router->post('/api/usuarios/list', 'UsuarioController@getUsuariosPaginated');

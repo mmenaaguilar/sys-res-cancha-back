@@ -3,8 +3,9 @@
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Patterns\Prototype\horarioPrototype\HorarioBasePrototype;
+
 use PDO;
-use PDOException;
 use Exception;
 
 class HorarioBaseRepository
@@ -210,5 +211,55 @@ class HorarioBaseRepository
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
 
         return $stmt->execute();
+    }
+    public function getHorariosByCanchaYDia(int $canchaId, string $diaSemana): array
+    {
+        $sql = "SELECT * FROM HorarioBase
+            WHERE cancha_id = :cancha_id
+              AND dia_semana = :dia_semana
+              AND estado = 'activo'
+            ORDER BY hora_inicio ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':cancha_id' => $canchaId,
+            ':dia_semana' => $diaSemana
+        ]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function insert(array $data): int
+    {
+        $sql = "INSERT INTO HorarioBase (cancha_id, dia_semana, hora_inicio, hora_fin, monto, estado)
+            VALUES (:cancha_id, :dia_semana, :hora_inicio, :hora_fin, :monto, :estado)";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':cancha_id' => $data['cancha_id'],
+            ':dia_semana' => $data['dia_semana'],
+            ':hora_inicio' => $data['hora_inicio'],
+            ':hora_fin' => $data['hora_fin'],
+            ':monto' => $data['monto'],
+            ':estado' => $data['estado'] ?? 'activo'
+        ]);
+
+        return (int)$this->db->lastInsertId();
+    }
+
+    public function cloneByDia(int $canchaId, string $fromDia, string $toDia): array
+    {
+        $originales = $this->getHorariosByCanchaYDia($canchaId, $fromDia);
+        if (empty($originales)) {
+            throw new Exception("No existen horarios en el día {$fromDia} para esta cancha.");
+        }
+
+        $clonadosIds = [];
+        foreach ($originales as $horario) {
+            $clonado = $horario->clone(['dia_semana' => $toDia]);
+            $clonadosIds[] = $this->insert($clonado);
+        }
+
+        return $clonadosIds;
     }
 }

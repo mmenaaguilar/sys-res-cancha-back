@@ -93,4 +93,27 @@ class HorarioBaseController extends ApiHelper
             $this->sendError($e);
         }
     }
+    public function cloneByDia(): void
+    {
+        try {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $canchaId = (int)($input['cancha_id'] ?? 0);
+            $fromDia = $input['from_dia'] ?? '';
+            $toDia = $input['to_dia'] ?? '';
+
+            $clonados = $this->service->cloneByDia($canchaId, $fromDia, $toDia);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Horarios clonados correctamente.',
+                'clonados_ids' => $clonados
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
 }

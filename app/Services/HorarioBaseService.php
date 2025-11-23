@@ -107,22 +107,7 @@ class HorarioBaseService
         }
         return $this->repository->delete($id);
     }
-    // public function changeStatus(int $id): array
-    // {
-    //     $item = $this->repository->getById($id);
-    //     if (!$item) {
-    //         throw new Exception("Horario base no encontrado.");
-    //     }
 
-    //     $nuevoEstado = ($item['estado'] === 'activo') ? 'inactivo' : 'activo';
-
-    //     $this->repository->changeStatus($id, $nuevoEstado);
-
-    //     return [
-    //         'horario_base_id' => $id,
-    //         'nuevo_estado' => $nuevoEstado
-    //     ];
-    // }
     public function changeStatus(int $id): array
     {
         if ($id <= 0) {
@@ -142,5 +127,30 @@ class HorarioBaseService
         }
 
         throw new Exception("Error al cambiar el estado del contacto.");
+    }
+    public function cloneByDia(int $canchaId, string $fromDia, string $toDia): array
+    {
+        if ($canchaId <= 0 || !$fromDia || !$toDia) {
+            throw new Exception("Datos inválidos para clonar horarios.");
+        }
+
+        // Llamar al repositorio que ya tiene getHorariosByCanchaYDia
+        $originales = $this->repository->getHorariosByCanchaYDia($canchaId, $fromDia);
+
+        if (empty($originales)) {
+            throw new Exception("No existen horarios en el día {$fromDia} para esta cancha.");
+        }
+
+        $clonadosIds = [];
+        foreach ($originales as $horarioData) {
+            // Instanciar objeto Prototype
+            $horarioProto = new \App\Patterns\Prototype\horarioPrototype\HorarioBasePrototype($horarioData);
+            $clonado = $horarioProto->clone(['dia_semana' => $toDia]);
+
+            // Convertir a array antes de insertar
+            $clonadosIds[] = $this->repository->insert($clonado->toArray());
+        }
+
+        return $clonadosIds;
     }
 }
