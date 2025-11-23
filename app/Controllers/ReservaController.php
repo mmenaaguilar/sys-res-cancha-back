@@ -15,7 +15,57 @@ class ReservaController extends ApiHelper
     {
         $this->service = new ReservaService();
     }
+    public function listReservas()
+    {
+        $data = $this->initRequest('POST');
+        if ($data === null) return;
 
+        $usuarioId = $data['usuario_id'] ?? null;
+        $complejoId = $data['complejo_id'] ?? null;
+        $searchTerm = $data['searchTerm'] ?? null;
+        $page = $data['page'] ?? 1;
+        $limit = $data['limit'] ?? 10;
+
+        try {
+            $usuarioId = $usuarioId ? (int)$usuarioId : null;
+            $complejoId = $complejoId ? (int)$complejoId : null;
+            $page = max(1, (int)$page);
+            $limit = max(1, (int)$limit);
+
+            $list = $this->service->listReservas($usuarioId, $complejoId, $searchTerm, $page, $limit);
+            $this->sendResponse($list);
+        } catch (Exception $e) {
+            $code = in_array($e->getCode(), [404, 409]) ? $e->getCode() : 400;
+            $this->sendError($e, $code);
+        }
+    }
+
+    public function listReservaDetalle()
+    {
+        $data = $this->initRequest('POST');
+        if ($data === null) return;
+
+        $reservaId = $data['reserva_id'] ?? null;
+        $page = $data['page'] ?? 1;
+        $limit = $data['limit'] ?? 10;
+
+        if (!$reservaId || !is_numeric($reservaId)) {
+            $this->sendError("reserva_id es requerido y debe ser numérico.", 400);
+            return;
+        }
+
+        try {
+            $reservaId = (int)$reservaId;
+            $page = max(1, (int)$page);
+            $limit = max(1, (int)$limit);
+
+            $list = $this->service->listReservaDetalle($reservaId, $page, $limit);
+            $this->sendResponse($list);
+        } catch (Exception $e) {
+            $code = in_array($e->getCode(), [404, 409]) ? $e->getCode() : 400;
+            $this->sendError($e, $code);
+        }
+    }
     /**
      * Crea una nueva reserva.
      */
