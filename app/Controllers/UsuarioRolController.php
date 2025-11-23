@@ -42,6 +42,7 @@ class UsuarioRolController extends ApiHelper
         if ($data === null) return;
 
         $complejoId = $data['complejo_id'] ?? null;
+        $searchTerm = $data['searchTerm'] ?? null;
         $page = $data['page'] ?? 1;
         $limit = $data['limit'] ?? 10;
 
@@ -49,14 +50,16 @@ class UsuarioRolController extends ApiHelper
             $complejoId = (empty($complejoId) || !is_numeric($complejoId) || $complejoId <= 0) ? null : (int)$complejoId;
             $page = max(1, (int)$page);
             $limit = max(1, (int)$limit);
+            $searchTerm = !empty($searchTerm) ? trim($searchTerm) : null;
 
-            $list = $this->usuarioRolService->getUsuarioRolesPaginated($complejoId, $page, $limit);
+            $list = $this->usuarioRolService->getUsuarioRolesPaginated($complejoId, $searchTerm, $page, $limit);
             $this->sendResponse($list);
         } catch (Exception $e) {
             $code = ($e->getCode() === 409 || $e->getCode() === 404) ? $e->getCode() : 400;
             $this->sendError($e, $code);
         }
     }
+
 
     public function update(int $id)
     {

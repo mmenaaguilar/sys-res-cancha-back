@@ -29,31 +29,46 @@ class UsuarioRepository
     /**
      * Obtiene una lista paginada de usuarios (solo activos).
      */
-    public function getUsuariosPaginated(int $limit, int $offset): array
+    public function getUsuariosPaginatedByFilters(?string $searchTerm, int $limit, int $offset): array
     {
-        // 1. Consulta para el total
-        $totalSql = "SELECT COUNT(usuario_id) AS total FROM Usuarios WHERE estado = 'activo'";
-        $totalStmt = $this->db->prepare($totalSql);
-        $totalStmt->execute();
-        $total = $totalStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+        $whereClauses = ["estado = 'activo'"];
+        $params = [];
 
-        // 2. Consulta para los datos (sin contraseña)
+        if (!empty($searchTerm)) {
+            $whereClauses[] = "(nombre LIKE :search OR correo LIKE :search OR telefono LIKE :search)";
+            $params[':search'] = "%$searchTerm%";
+        }
+
+        $whereSql = !empty($whereClauses) ? "WHERE " . implode(" AND ", $whereClauses) : "";
+
+        // Total de registros
+        $totalSql = "SELECT COUNT(usuario_id) AS total FROM Usuarios $whereSql";
+        $stmtTotal = $this->db->prepare($totalSql);
+        foreach ($params as $key => $value) {
+            $stmtTotal->bindValue($key, $value, PDO::PARAM_STR);
+        }
+        $stmtTotal->execute();
+        $total = $stmtTotal->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+
+        // Datos paginados
         $dataSql = "SELECT usuario_id, nombre, telefono, correo, estado
                     FROM Usuarios
-                    WHERE estado = 'activo'
-                    ORDER BY nombre ASC LIMIT :limit OFFSET :offset";
+                    $whereSql
+                    ORDER BY nombre ASC
+                    LIMIT :limit OFFSET :offset";
 
-        $dataStmt = $this->db->prepare($dataSql);
-        $dataStmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-        $dataStmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-        $dataStmt->execute();
-        $data = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmtData = $this->db->prepare($dataSql);
+        foreach ($params as $key => $value) {
+            $stmtData->bindValue($key, $value, PDO::PARAM_STR);
+        }
+        $stmtData->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmtData->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $stmtData->execute();
+        $data = $stmtData->fetchAll(PDO::FETCH_ASSOC);
 
-        return [
-            'total' => (int)$total,
-            'data' => $data
-        ];
+        return ['total' => (int)$total, 'data' => $data];
     }
+
 
 
     /**

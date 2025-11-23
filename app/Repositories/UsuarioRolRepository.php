@@ -31,30 +31,37 @@ class UsuarioRolRepository
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function getUsuarioRolesPaginatedByComplejo(?int $complejoId, int $limit, int $offset): array
+    public function getUsuarioRolesPaginatedByComplejo(?int $complejoId, ?string $searchTerm, int $limit, int $offset): array
     {
         $baseSql = "FROM UsuarioRol ur
-                    JOIN Roles r ON ur.rol_id = r.rol_id
-                    JOIN Usuarios u ON ur.usuario_id = u.usuario_id
-                    LEFT JOIN ComplejoDeportivo cd ON ur.complejo_id = cd.complejo_id";
+                JOIN Roles r ON ur.rol_id = r.rol_id
+                JOIN Usuarios u ON ur.usuario_id = u.usuario_id
+                LEFT JOIN ComplejoDeportivo cd ON ur.complejo_id = cd.complejo_id";
 
         $params = [];
-        $whereClauses = ["ur.estado = 'activo'"]; // FILTRO POR ESTADO
+        $whereClauses = ["ur.estado = 'activo'"]; // filtro por estado
 
         if ($complejoId !== null) {
             $whereClauses[] = "ur.complejo_id = :complejo_id";
             $params[':complejo_id'] = $complejoId;
         }
 
+        if (!empty($searchTerm)) {
+            $whereClauses[] = "(u.nombre LIKE :search OR u.correo LIKE :search OR r.nombre LIKE :search)";
+            $params[':search'] = "%{$searchTerm}%";
+        }
+
         $where = !empty($whereClauses) ? " WHERE " . implode(" AND ", $whereClauses) : "";
 
+        // Total
         $totalSql = "SELECT COUNT(ur.usuarioRol_id) AS total " . $baseSql . $where;
         $totalStmt = $this->db->prepare($totalSql);
         $totalStmt->execute($params);
         $total = $totalStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        $dataSql = "SELECT ur.usuarioRol_id, u.nombre AS usuario_nombre, u.correo, u.telefono, 
-                           r.nombre AS rol_nombre, r.rol_id, ur.complejo_id, cd.nombre AS complejo_nombre, ur.estado "
+        // Datos
+        $dataSql = "SELECT ur.usuarioRol_id, u.nombre AS usuario_nombre, u.correo, u.telefono,
+                       r.nombre AS rol_nombre, r.rol_id, ur.complejo_id, cd.nombre AS complejo_nombre, ur.estado "
             . $baseSql . $where
             . " ORDER BY u.nombre ASC, r.nombre ASC LIMIT :limit OFFSET :offset";
 
@@ -63,7 +70,6 @@ class UsuarioRolRepository
         foreach ($params as $key => &$val) {
             $dataStmt->bindParam($key, $val);
         }
-
         $dataStmt->bindParam(':limit', $limit, PDO::PARAM_INT);
         $dataStmt->bindParam(':offset', $offset, PDO::PARAM_INT);
 

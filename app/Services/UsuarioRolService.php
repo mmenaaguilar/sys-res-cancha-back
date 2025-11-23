@@ -41,31 +41,48 @@ class UsuarioRolService
         }
         $data['estado'] = $estado;
     }
-
-    public function getUsuarioRolesPaginated(?int $complejoId, int $page, int $limit): array
+    private function formatPaginationResponse(array $result, int $page, int $limit): array
     {
-        if ($limit <= 0) {
-            throw new Exception("El límite de resultados debe ser un número positivo.");
-        }
-        if ($page <= 0) {
-            $page = 1;
-        }
-
-        $offset = ($page - 1) * $limit;
-
-        $result = $this->usuarioRolRepository->getUsuarioRolesPaginatedByComplejo($complejoId, $limit, $offset);
-
         $total = $result['total'];
-        $totalPages = ceil($total / $limit);
+
+        // Calcular total de páginas
+        $totalPages = $limit > 0 ? ceil($total / $limit) : 0;
+        if ($total == 0) $totalPages = 1; // Si no hay datos, hay 1 página vacía.
+
+        // Asegurar que la página actual no es mayor al total de páginas
+        $page = min($page, (int)$totalPages);
+
+        // Calcular next_page y prev_page
+        $hasNextPage = $page < $totalPages;
+        $hasPrevPage = $page > 1;
 
         return [
             'total' => $total,
             'per_page' => $limit,
             'current_page' => $page,
             'last_page' => (int)$totalPages,
+
+            // ¡Nuevos campos booleanos!
+            'next_page' => $hasNextPage,
+            'prev_page' => $hasPrevPage,
+
             'data' => $result['data']
         ];
     }
+
+    public function getUsuarioRolesPaginated(?int $complejoId, ?string $searchTerm, int $page, int $limit): array
+    {
+        if ($limit <= 0) {
+            throw new Exception("El límite de resultados debe ser un número positivo.");
+        }
+        $page = max(1, $page);
+        $offset = ($page - 1) * $limit;
+
+        $result = $this->usuarioRolRepository->getUsuarioRolesPaginatedByComplejo($complejoId, $searchTerm, $limit, $offset);
+
+        return $this->formatPaginationResponse($result, $page, $limit);
+    }
+
 
     public function createUsuarioRol(array $data): int
     {

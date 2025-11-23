@@ -31,32 +31,44 @@ class UsuarioService
             $data['telefono'] = null;
         }
     }
-
-    public function getUsuariosPaginated(int $page, int $limit): array
+    private function formatPaginationResponse(array $result, int $page, int $limit): array
     {
-        if ($limit <= 0) {
-            throw new Exception("El límite de resultados debe ser un número positivo.");
-        }
-        if ($page <= 0) {
-            $page = 1;
-        }
-
-        $offset = ($page - 1) * $limit;
-
-        $result = $this->usuarioRepository->getUsuariosPaginated($limit, $offset);
-
         $total = $result['total'];
-        $totalPages = ceil($total / $limit);
+
+        $totalPages = $limit > 0 ? ceil($total / $limit) : 0;
+        if ($total == 0) $totalPages = 1;
+
+        $page = min($page, (int)$totalPages);
 
         return [
             'total' => $total,
             'per_page' => $limit,
             'current_page' => $page,
             'last_page' => (int)$totalPages,
+            'next_page' => $page < $totalPages,
+            'prev_page' => $page > 1,
             'data' => $result['data']
         ];
     }
 
+    public function getUsuariosPaginated(?string $searchTerm, int $page, int $limit): array
+    {
+        if ($limit <= 0) {
+            throw new Exception("El límite de resultados debe ser un número positivo.");
+        }
+
+        $page = max(1, $page);
+        $offset = ($page - 1) * $limit;
+        $searchTerm = trim($searchTerm ?? '');
+
+        $result = $this->usuarioRepository->getUsuariosPaginatedByFilters(
+            $searchTerm,
+            $limit,
+            $offset
+        );
+
+        return $this->formatPaginationResponse($result, $page, $limit);
+    }
     /**
      * Procesa la actualización de un usuario.
      */
