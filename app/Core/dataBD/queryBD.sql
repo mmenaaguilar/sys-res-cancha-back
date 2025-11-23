@@ -144,6 +144,7 @@ CREATE TABLE HorarioBase (
     hora_inicio TIME NOT NULL,
     hora_fin TIME NOT NULL,
     monto DECIMAL(10,2) NOT NULL,
+    estado ENUM('activo', 'inactivo') DEFAULT 'activo',
     FOREIGN KEY (cancha_id) REFERENCES Cancha(cancha_id) ON DELETE CASCADE
 );
 
@@ -154,7 +155,8 @@ CREATE TABLE HorarioEspecial (
     hora_inicio TIME NOT NULL,
     hora_fin TIME NOT NULL,
     monto DECIMAL(10,2),
-    estado ENUM('disponible','bloqueado','mantenimiento'),
+    estado_horario ENUM('disponible','bloqueado','mantenimiento'),
+    estado ENUM('activo', 'inactivo') DEFAULT 'activo',
     descripcion VARCHAR(255),
     FOREIGN KEY (cancha_id) REFERENCES Cancha(cancha_id) ON DELETE CASCADE
 );

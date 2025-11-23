@@ -73,3 +73,10 @@ $router->post('/api/complejos', 'ComplejoDeportivoController@create');
 $router->put('/api/complejos/{id}', 'ComplejoDeportivoController@update');
 $router->put('/api/complejos/status/{id}', 'ComplejoDeportivoController@changeStatus');
 $router->delete('/api/complejos/{id}', 'ComplejoDeportivoController@delete');
+
+// Rutas para la gestión de horari oespecial
+$router->post('/api/horario-especial/list', 'HorarioEspecialController@list');
+$router->post('/api/horario-especial', 'HorarioEspecialController@create');
+$router->put('/api/horario-especial/{id}', 'HorarioEspecialController@update');
+$router->delete('/api/horario-especial/{id}', 'HorarioEspecialController@delete');
+$router->put('/api/horario-especial/status/{id}', 'HorarioEspecialController@changeStatus');

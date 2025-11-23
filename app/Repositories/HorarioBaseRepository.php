@@ -92,6 +92,25 @@ class HorarioBaseRepository
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    public function getByCanchaYDia(int $canchaId, string $diaSemana, string $horaInicio, string $horaFin): ?array
+    {
+        $sql = "SELECT * FROM HorarioBase
+            WHERE cancha_id = :cancha_id
+              AND dia_semana = :dia_semana
+              AND hora_inicio <= :hora_inicio
+              AND hora_fin >= :hora_fin
+            LIMIT 1";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':cancha_id' => $canchaId,
+            ':dia_semana' => $diaSemana,
+            ':hora_inicio' => $horaInicio,
+            ':hora_fin' => $horaFin
+        ]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
 
     /**
      * Crear nuevo registro
@@ -150,5 +169,14 @@ class HorarioBaseRepository
         $stmt->execute([':id' => $id]);
 
         return $stmt->rowCount() > 0;
+    }
+    public function changeStatus(int $id, string $nuevoEstado): bool
+    {
+        $sql = "UPDATE HorarioBase SET estado = :estado WHERE horario_base_id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':estado', $nuevoEstado);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
     }
 }

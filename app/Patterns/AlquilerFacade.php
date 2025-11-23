@@ -4,15 +4,19 @@ namespace App\Patterns;
 
 use App\Repositories\CanchaRepository;
 use App\Repositories\HorarioBaseRepository;
-use App\Patterns\Reserva\HorarioBaseComposite;
-use App\Patterns\Reserva\ReservaLeaf;
-use App\Patterns\Reserva\HorarioEspecialLeaf;
+use App\Repositories\HorarioEspecialRepository;
+use App\Patterns\Composity\ComposityDisponibilidadHorario\HorarioBaseComposite;
+use App\Patterns\Composity\ComposityDisponibilidadHorario\ReservaLeaf;
+use App\Patterns\Composity\ComposityDisponibilidadHorario\HorarioEspecialLeaf;
+use App\Patterns\Strategy\precioStrategy\PrecioContext;
 
 class AlquilerFacade
 {
     private HorarioBaseComposite $composite;
     private CanchaRepository $canchaRepo;
     private HorarioBaseRepository $horarioRepo;
+    private HorarioEspecialRepository $horarioEspecialRepo;
+    private PrecioContext $precioContext;
 
     public function __construct()
     {
@@ -24,6 +28,10 @@ class AlquilerFacade
         // Repositorios
         $this->canchaRepo = new CanchaRepository();
         $this->horarioRepo = new HorarioBaseRepository();
+        $this->horarioEspecialRepo = new HorarioEspecialRepository();
+
+        // Contexto de Strategy para calcular precios
+        $this->precioContext = new PrecioContext($this->horarioEspecialRepo);
     }
 
     public function validarDisponibilidad(array $data): array
@@ -80,12 +88,20 @@ class AlquilerFacade
                     $horaFin
                 );
 
+                // Obtener monto usando Strategy
+                $montoFinal = $this->precioContext->calcularMonto(
+                    $cancha['cancha_id'],
+                    $fecha,
+                    $horaInicio,
+                    $horaFin,
+                );
+
                 $listaHorarios[] = [
                     'horario_base_id' => $hb['horario_base_id'],
                     'dia_semana'      => $hb['dia_semana'],
                     'hora_inicio'     => $horaInicio,
                     'hora_fin'        => $horaFin,
-                    'monto'           => $hb['monto'],
+                    'monto'           => $montoFinal,
                     'disponible'      => $disponible
                 ];
             }

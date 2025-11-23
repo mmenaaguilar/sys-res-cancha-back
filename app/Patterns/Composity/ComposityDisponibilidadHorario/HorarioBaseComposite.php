@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Patterns\Reserva;
+namespace App\Patterns\Composity\ComposityDisponibilidadHorario;
 
 use Exception;
 

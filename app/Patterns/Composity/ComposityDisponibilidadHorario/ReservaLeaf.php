@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Patterns\Reserva;
+namespace App\Patterns\Composity\ComposityDisponibilidadHorario;
 
 use App\Core\Database;
 use PDO;
 use Exception;
 
-class HorarioEspecialLeaf implements ComponenteReserva
+class ReservaLeaf implements ComponenteReserva
 {
     private PDO $db;
 
@@ -21,8 +21,8 @@ class HorarioEspecialLeaf implements ComponenteReserva
     }
 
     /**
-     * Valida si existe un bloqueo por 'HorarioEspecial' para el slot dado.
-     * @return bool True si está disponible, False si hay bloqueo.
+     * Valida si existe una colisión de reserva en la base de datos.
+     * @return bool True si está disponible, False si hay colisión.
      */
     public function validarDisponibilidad(
         int $canchaId,
@@ -32,12 +32,12 @@ class HorarioEspecialLeaf implements ComponenteReserva
     ): bool {
         $sql = "
         SELECT COUNT(*) 
-        FROM HorarioEspecial HE
-        WHERE HE.cancha_id = :cancha_id
-          AND DATE(HE.fecha) = :fecha
-          AND HE.estado IN ('bloqueado','mantenimiento')
-          AND TIME(HE.hora_fin) > :hora_inicio
-          AND TIME(HE.hora_inicio) < :hora_fin
+        FROM Reserva R
+        WHERE R.cancha_id = :cancha_id
+          AND DATE(R.fecha) = :fecha
+          AND R.estado = 'confirmada'
+          AND TIME(R.hora_fin) > :hora_inicio
+          AND TIME(R.hora_inicio) < :hora_fin
     ";
 
         $params = [
@@ -53,7 +53,7 @@ class HorarioEspecialLeaf implements ComponenteReserva
             $count = (int)$stmt->fetchColumn();
             return $count === 0; // True si está libre
         } catch (Exception $e) {
-            error_log("Error en HorarioEspecialLeaf: " . $e->getMessage());
+            error_log("Error en ReservaLeaf: " . $e->getMessage());
             return false;
         }
     }

@@ -78,4 +78,19 @@ class HorarioBaseController extends ApiHelper
             $this->sendError($e);
         }
     }
+    public function changeStatus(int $id)
+    {
+        $data = $this->initRequest('PUT');
+
+        try {
+            $result = $this->service->changeStatus($id);
+            $this->sendResponse([
+                'contacto_id' => $id,
+                'nuevo_estado' => $result['nuevo_estado'],
+                'mensaje' => "Estado cambiado a {$result['nuevo_estado']}."
+            ]);
+        } catch (Exception $e) {
+            $this->sendError($e);
+        }
+    }
 }
