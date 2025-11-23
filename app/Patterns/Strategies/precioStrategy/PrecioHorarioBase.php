@@ -51,6 +51,6 @@ class PrecioHorarioBase implements PrecioStrategy
             );
         }
 
-        return (float)$horarioBase['monto'];
+        return (float)$horarioBase['monto_total'];
     }
 }

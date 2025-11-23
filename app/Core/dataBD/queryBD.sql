@@ -121,7 +121,6 @@ CREATE TABLE Contactos (
     estado ENUM('activo', 'inactivo') DEFAULT 'activo',
     FOREIGN KEY (complejo_id) REFERENCES ComplejoDeportivo(complejo_id) ON DELETE CASCADE
 );
-
 CREATE TABLE Servicios (
     servicio_id INT AUTO_INCREMENT PRIMARY KEY,
     complejo_id INT NOT NULL,
@@ -164,6 +163,7 @@ CREATE TABLE ServicioPorHorario (
     id INT AUTO_INCREMENT PRIMARY KEY,
     servicio_id INT NOT NULL,
     horarioBase_id INT NOT NULL,
+    is_obligatorio BOOLEAN DEFAULT FALSE, 
     estado ENUM('activo', 'inactivo') DEFAULT 'activo',
     FOREIGN KEY (servicio_id) REFERENCES Servicios(servicio_id) ON DELETE CASCADE,
     FOREIGN KEY (horarioBase_id) REFERENCES HorarioBase(horario_base_id)

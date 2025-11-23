@@ -94,6 +94,7 @@ class HorarioBaseRepository
 
     public function getByCanchaYDia(int $canchaId, string $diaSemana, string $horaInicio, string $horaFin): ?array
     {
+        // 1. Obtener el horario base
         $sql = "SELECT * FROM HorarioBase
             WHERE cancha_id = :cancha_id
               AND dia_semana = :dia_semana
@@ -109,8 +110,39 @@ class HorarioBaseRepository
             ':hora_fin' => $horaFin
         ]);
 
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        $horario = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$horario) {
+            return null;
+        }
+
+        // 2. Consultar si existen servicios obligatorios asociados a este horario
+        $sqlServicio = "SELECT S.monto 
+                    FROM ServicioPorHorario SPH
+                    JOIN Servicios S ON SPH.servicio_id = S.servicio_id
+                    WHERE SPH.horarioBase_id = :horario_id
+                      AND SPH.is_obligatorio = 1
+                      AND SPH.estado = 'activo'
+                      AND S.estado = 'activo'";
+
+        $stmtServicio = $this->db->prepare($sqlServicio);
+        $stmtServicio->execute([
+            ':horario_id' => $horario['horario_base_id']
+        ]);
+
+        $servicios = $stmtServicio->fetchAll(PDO::FETCH_ASSOC);
+
+        // 3. Sumar los montos de los servicios obligatorios
+        $montoAdicional = 0;
+        foreach ($servicios as $servicio) {
+            $montoAdicional += (float) $servicio['monto'];
+        }
+
+        $horario['monto_total'] = (float) $horario['monto'] + $montoAdicional;
+
+        return $horario;
     }
+
 
     /**
      * Crear nuevo registro

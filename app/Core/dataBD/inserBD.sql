@@ -86,9 +86,9 @@ VALUES
 -- ================================
 -- SERVICIOS POR HORARIO
 -- ================================
-INSERT INTO ServicioPorHorario (servicio_id, horarioBase_id)
+INSERT INTO ServicioPorHorario (servicio_id, horarioBase_id, is_obligatorio)
 VALUES
-(1, 1);
+(1, 1, TRUE);
 
 -- ================================
 -- HORARIO ESPECIAL
