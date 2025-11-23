@@ -109,4 +109,21 @@ class PoliticaRepository
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         return $stmt->execute();
     }
+    public function getPoliticaMasEstricta(int $complejoId, float $horasDisponibles): ?array
+    {
+        $sql = "SELECT * FROM PoliticaCancelacion
+            WHERE complejo_id = :complejo_id
+              AND estado = 'activo'
+              AND horas_limite <= :horas
+            ORDER BY horas_limite DESC
+            LIMIT 1";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':complejo_id' => $complejoId,
+            ':horas' => $horasDisponibles
+        ]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
 }

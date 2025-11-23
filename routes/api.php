@@ -80,3 +80,6 @@ $router->post('/api/horario-especial', 'HorarioEspecialController@create');
 $router->put('/api/horario-especial/{id}', 'HorarioEspecialController@update');
 $router->delete('/api/horario-especial/{id}', 'HorarioEspecialController@delete');
 $router->put('/api/horario-especial/status/{id}', 'HorarioEspecialController@changeStatus');
+
+
+$router->put('/api/reserva/cancelar/{id}', 'ReservaController@cancelar');
