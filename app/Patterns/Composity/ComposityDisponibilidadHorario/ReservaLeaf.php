@@ -32,10 +32,11 @@ class ReservaLeaf implements ComponenteReserva
     ): bool {
         $sql = "
         SELECT COUNT(*) 
-        FROM Reserva R
+        FROM ReservaDetalle R
+        INNER JOIN Reserva A ON A.reserva_id = R.reserva_id
         WHERE R.cancha_id = :cancha_id
           AND DATE(R.fecha) = :fecha
-          AND R.estado = 'confirmada'
+          AND A.estado = 'confirmada'
           AND TIME(R.hora_fin) > :hora_inicio
           AND TIME(R.hora_inicio) < :hora_fin
     ";

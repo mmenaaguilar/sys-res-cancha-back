@@ -25,6 +25,32 @@ class ComplejoDeportivoRepository
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result ?: null;
     }
+    
+    public function getComplejosByDistrito(int $distritoId): array
+    {
+        $sql = "SELECT 
+                cd.complejo_id,
+                cd.nombre,
+                cd.url_imagen,
+                cd.descripcion,
+                CONCAT(cd.direccion_detalle, ', ', d.nombre, ', ', p.nombre, ', ', dep.nombre) AS direccion_completa,
+                cd.distrito_id,
+                cd.provincia_id,
+                cd.departamento_id
+            FROM ComplejoDeportivo cd
+            INNER JOIN Distrito d ON cd.distrito_id = d.distrito_id
+            INNER JOIN Provincia p ON cd.provincia_id = p.provincia_id
+            INNER JOIN Departamento dep ON cd.departamento_id = dep.departamento_id
+            WHERE cd.distrito_id = :distritoId
+              AND cd.estado = 'activo'
+            ORDER BY cd.nombre ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':distritoId', $distritoId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
     public function getAll(?int $complejoId = null): array
     {

@@ -27,4 +27,17 @@ class AlquilerController
         header('Content-Type: application/json');
         echo json_encode($response);
     }
+    public function buscarComplejosDisponiblesPorDistrito()
+    {
+        // Obtener los datos enviados en el body POST
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        // Crear el facade y llamar al método
+        $facade = new AlquilerFacade();
+        $resultado = $facade->buscarComplejosDisponiblesPorDistrito($data);
+
+        // Devolver JSON
+        header('Content-Type: application/json');
+        echo json_encode($resultado);
+    }
 }

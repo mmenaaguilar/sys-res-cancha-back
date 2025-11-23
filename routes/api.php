@@ -59,6 +59,8 @@ $router->put('/api/usuarios/{id}', 'UsuarioController@update');
 
 // RUTA PARA VALIDAR DISPONIBILIDAD
 $router->post('/api/alquiler/validar-disponibilidad', 'AlquilerController@validarDisponibilidad');
+// Listar complejos disponibles por distrito
+$router->post('/api/alquiler/buscar-complejos-disponibles', 'AlquilerController@buscarComplejosDisponiblesPorDistrito');
 
 // Rutas para la gestión de Canchas
 $router->post('/api/canchas/list', 'CanchaController@listByComplejoPaginated');

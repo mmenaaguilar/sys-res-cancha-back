@@ -35,7 +35,7 @@ class HorarioEspecialLeaf implements ComponenteReserva
         FROM HorarioEspecial HE
         WHERE HE.cancha_id = :cancha_id
           AND DATE(HE.fecha) = :fecha
-          AND HE.estado IN ('bloqueado','mantenimiento')
+          AND HE.estado_horario IN ('bloqueado','mantenimiento')
           AND TIME(HE.hora_fin) > :hora_inicio
           AND TIME(HE.hora_inicio) < :hora_fin
     ";

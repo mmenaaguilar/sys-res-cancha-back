@@ -35,26 +35,33 @@ class CanchaRepository
      */
     public function getByComplejo(int $complejoId, ?int $tipoDeporteId = null): array
     {
-        $sql = "SELECT cancha_id, complejo_id, tipo_deporte_id, nombre, url_imagen, descripcion, estado
-            FROM Cancha
-            WHERE complejo_id = :id
-              AND estado = 'activo'";
+        $sql = "SELECT c.cancha_id, c.complejo_id, c.tipo_deporte_id, c.nombre, c.descripcion, c.estado
+            FROM Cancha c
+            WHERE c.complejo_id = :id
+              AND c.estado = 'activo'
+              AND EXISTS (
+                  SELECT 1 
+                  FROM HorarioBase h
+                  WHERE h.cancha_id = c.cancha_id
+                    AND h.estado = 'activo'
+              )";
 
         $params = [':id' => $complejoId];
 
-        // Solo agregamos el filtro si tipoDeporteId tiene valor
+        // Filtro por tipo de deporte si se recibe
         if ($tipoDeporteId !== null && $tipoDeporteId > 0) {
-            $sql .= " AND tipo_deporte_id = :tipoDeporteId";
+            $sql .= " AND c.tipo_deporte_id = :tipoDeporteId";
             $params[':tipoDeporteId'] = $tipoDeporteId;
         }
 
-        $sql .= " ORDER BY cancha_id ASC";
+        $sql .= " ORDER BY c.cancha_id ASC";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
 
     public function getByComplejoPaginated(
         int $complejoId,

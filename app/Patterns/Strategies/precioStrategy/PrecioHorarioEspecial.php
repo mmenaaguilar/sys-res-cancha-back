@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Patterns\Strategy\precioStrategy;
+namespace App\Patterns\Strategies\precioStrategy;
 
 use App\Repositories\HorarioEspecialRepository;
 
