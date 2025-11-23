@@ -85,4 +85,46 @@ class ReservaService
             'horas_disponibles' => $horasDisponibles
         ];
     }
+    public function crearReserva(array $data): array
+    {
+        // Validación básica
+        if (!isset($data['usuario_id']) || !isset($data['metodo_pago_id']) || !isset($data['detalles'])) {
+            throw new Exception("Datos incompletos para crear reserva.");
+        }
+
+        // Calcular total
+        $total = 0;
+        foreach ($data['detalles'] as $d) {
+            $total += $d['precio'];
+        }
+
+        // Crear reserva (CABEZA)
+        $reservaId = $this->reservaRepo->createReserva([
+            'usuario_id'     => $data['usuario_id'],
+            'metodo_pago_id' => $data['metodo_pago_id'],
+            'total_pago'     => $total,
+            'izipay_token'   => $data['izipay_token'] ?? null
+        ]);
+
+        // Crear DETALLES
+        foreach ($data['detalles'] as $d) {
+            $this->reservaRepo->addDetalle($reservaId, $d);
+        }
+
+        return [
+            'reserva_id' => $reservaId,
+            'total'      => $total
+        ];
+    }
+
+    public function confirmarPago(int $reservaId)
+    {
+        if (!$this->reservaRepo->getById($reservaId)) {
+            throw new Exception("Reserva no encontrada.");
+        }
+
+        $this->reservaRepo->confirmarPago($reservaId);
+
+        return ['mensaje' => 'Pago confirmado y reserva activada'];
+    }
 }

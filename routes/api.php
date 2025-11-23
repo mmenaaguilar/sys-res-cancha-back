@@ -82,4 +82,8 @@ $router->delete('/api/horario-especial/{id}', 'HorarioEspecialController@delete'
 $router->put('/api/horario-especial/status/{id}', 'HorarioEspecialController@changeStatus');
 
 
-$router->put('/api/reserva/cancelar/{id}', 'ReservaController@cancelar');
+// Rutas para la gestión de Reservas
+$router->post('/api/reserva', 'ReservaController@crear');           
+$router->post('/api/reserva/confirmar-pago/{id}', 'ReservaController@confirmarPago'); 
+$router->post('/api/reserva/izipay-webhook', 'ReservaController@izipayWebhook');
+$router->put('/api/reserva/cancelar/{id}', 'ReservaController@cancelar'); 
