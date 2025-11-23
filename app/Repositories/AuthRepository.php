@@ -7,7 +7,7 @@ use App\Core\Database;
 use PDO;
 use Exception;
 
-class UserRepository
+class AuthRepository
 {
     private PDO $db;
 

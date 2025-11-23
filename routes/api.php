@@ -56,6 +56,7 @@ $router->delete('/api/horario-base/{id}', 'HorarioBaseController@delete');
 // Rutas para la gestión de Usuarios (MOVIDAS/AÑADIDAS AQUÍ)
 $router->post('/api/usuarios/list', 'UsuarioController@getUsuariosPaginated');
 $router->put('/api/usuarios/{id}', 'UsuarioController@update');
+$router->post('/api/usuarios/creditos', 'UsuarioController@getCreditos');
 
 // RUTA PARA VALIDAR DISPONIBILIDAD
 $router->post('/api/alquiler/validar-disponibilidad', 'AlquilerController@validarDisponibilidad');

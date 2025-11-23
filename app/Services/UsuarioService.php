@@ -4,15 +4,18 @@
 namespace App\Services;
 
 use App\Repositories\UsuarioRepository;
+use App\Repositories\CreditoUsuarioRepository;
 use Exception;
 
 class UsuarioService
 {
     private UsuarioRepository $usuarioRepository;
+    private CreditoUsuarioRepository $creditoRepo;
 
     public function __construct()
     {
         $this->usuarioRepository = new UsuarioRepository();
+        $this->creditoRepo = new CreditoUsuarioRepository();
     }
 
     /**
@@ -88,5 +91,13 @@ class UsuarioService
 
         // 3. Ejecutar la actualización
         return $this->usuarioRepository->update($id, $data);
+    }
+    public function getCreditosByUsuario(int $usuarioId): array
+    {
+        if ($usuarioId <= 0) {
+            throw new Exception("ID de usuario inválido.");
+        }
+
+        return $this->creditoRepo->getCreditosByUsuario($usuarioId);
     }
 }

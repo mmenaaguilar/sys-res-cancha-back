@@ -60,4 +60,21 @@ namespace App\Controllers;
                 $this->sendError($e, $code);
             }
         }
+        public function getCreditos()
+        {
+            $data = $this->initRequest('POST');
+            if ($data === null) return;
+
+            try {
+                $usuarioId = intval($data['usuario_id'] ?? 0);
+                $creditos = $this->usuarioService->getCreditosByUsuario($usuarioId);
+
+                $this->sendResponse([
+                    'usuario_id' => $usuarioId,
+                    'creditos' => $creditos
+                ]);
+            } catch (Exception $e) {
+                $this->sendError($e, 400);
+            }
+        }
     }

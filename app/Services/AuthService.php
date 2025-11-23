@@ -3,16 +3,16 @@
 
 namespace App\Services;
 
-use App\Repositories\UserRepository;
+use App\Repositories\AuthRepository;
 use Exception;
 
 class AuthService
 {
-    private UserRepository $userRepository;
+    private AuthRepository $userRepository;
 
     public function __construct()
     {
-        $this->userRepository = new UserRepository();
+        $this->userRepository = new AuthRepository();
     }
 
     // ==========================================================

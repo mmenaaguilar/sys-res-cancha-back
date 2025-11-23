@@ -28,4 +28,17 @@ class CreditoUsuarioRepository
 
         return (int) $this->db->lastInsertId();
     }
+    public function getCreditosByUsuario(int $usuarioId): array
+    {
+        $sql = "SELECT monto, fecha_otorgado
+                FROM CreditoUsuario
+                WHERE usuario_id = :usuario_id
+                ORDER BY fecha_otorgado DESC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':usuario_id', $usuarioId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
