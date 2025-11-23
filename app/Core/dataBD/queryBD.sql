@@ -213,29 +213,19 @@ CREATE TABLE ReservaDetalle (
 
 
 -- ##################################################################
--- CALIFICACIONES, FAVORITOS y POLÍTICAS
+--  FAVORITOS y POLÍTICAS
 -- ##################################################################
 
-CREATE TABLE ComplejoCalificaciones (
-    calificacion_id INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE ComplejoDeportivoFavoritos (
+    favorito_id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
     complejo_id INT NOT NULL,
-    puntuacion TINYINT CHECK (puntuacion BETWEEN 1 AND 5),
-    fecha_calificacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (usuario_id, complejo_id),
+    fecha_agregado DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (usuario_id, complejo_id), 
     FOREIGN KEY (usuario_id) REFERENCES Usuarios(usuario_id) ON DELETE CASCADE,
     FOREIGN KEY (complejo_id) REFERENCES ComplejoDeportivo(complejo_id) ON DELETE CASCADE
 );
 
-CREATE TABLE CanchaFavoritos (
-    favorito_id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
-    cancha_id INT NOT NULL,
-    fecha_agregado DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (usuario_id, cancha_id),
-    FOREIGN KEY (usuario_id) REFERENCES Usuarios(usuario_id) ON DELETE CASCADE,
-    FOREIGN KEY (cancha_id) REFERENCES Cancha(cancha_id) ON DELETE CASCADE
-);
 
 CREATE TABLE PoliticaCancelacion (
     politica_id INT AUTO_INCREMENT PRIMARY KEY,

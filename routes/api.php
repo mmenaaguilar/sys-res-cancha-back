@@ -88,4 +88,9 @@ $router->post('/api/reserva-detalle/list', 'ReservaController@listReservaDetalle
 $router->post('/api/reserva', 'ReservaController@crear');           
 $router->post('/api/reserva/confirmar-pago/{id}', 'ReservaController@confirmarPago'); 
 $router->post('/api/reserva/izipay-webhook', 'ReservaController@izipayWebhook');
-$router->put('/api/reserva/cancelar/{id}', 'ReservaController@cancelar'); 
+$router->put('/api/reserva/cancelar/{id}', 'ReservaController@cancelar');
+
+// Rutas para la gestión de canchas fav
+$router->post('/api/favoritos', 'ComplejoDeportivoFavoritoController@create');
+$router->delete('/api/favoritos/{id}', 'ComplejoDeportivoFavoritoController@delete');
+$router->post('/api/favoritos/list', 'ComplejoDeportivoFavoritoController@listByUsuario');

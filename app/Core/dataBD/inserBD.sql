@@ -125,19 +125,11 @@ VALUES
 (3, 3, '2025-12-10', '10:00', '11:00', 95.00);
 
 -- ================================
--- CALIFICACIONES
--- ================================
-INSERT INTO ComplejoCalificaciones (usuario_id, complejo_id, puntuacion)
-VALUES
-(3, 1, 4),
-(2, 1, 3);
-
--- ================================
 -- FAVORITOS
 -- ================================
-INSERT INTO CanchaFavoritos (usuario_id, cancha_id)
+INSERT INTO ComplejoDeportivoFavoritos (usuario_id, complejo_id)
 VALUES
-(3, 3);
+(3, 1);
 
 -- ================================
 -- POLÍTICA DE CANCELACIÓN
