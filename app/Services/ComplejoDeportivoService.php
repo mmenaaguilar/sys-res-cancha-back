@@ -142,6 +142,6 @@ class ComplejoDeportivoService
             throw new Exception("Error al subir la imagen del complejo.");
         }
 
-        return '/uploads/complejos/' . $filename;
+        return 'public/uploads/complejos/' . $filename;
     }
 }

@@ -42,8 +42,15 @@ class ComplejoDeportivoController extends ApiHelper
 
     public function create()
     {
+        // 1️⃣ Intentar obtener JSON
         $data = $this->initRequest('POST');
-        if ($data === null) return;
+
+        // 2️⃣ Si no es JSON, asumir multipart/form-data
+        if ($data === null) {
+            $data = $_POST;
+        }
+
+        // 3️⃣ Obtener imagen si viene
         $file = $_FILES['imagen'] ?? null;
 
         try {
@@ -56,13 +63,23 @@ class ComplejoDeportivoController extends ApiHelper
 
     public function update(int $id)
     {
+        // 1️⃣ Intentar obtener JSON
         $data = $this->initRequest('PUT');
-        if ($data === null) return;
+
+        // 2️⃣ Si no es JSON, asumir multipart/form-data
+        if ($data === null) {
+            $data = $_POST;
+        }
+
+        // 3️⃣ Obtener imagen si viene
         $file = $_FILES['imagen'] ?? null;
 
         try {
             $this->service->update($id, $data, $file);
-            $this->sendResponse(['complejo_id' => $id, 'mensaje' => 'Actualizado correctamente']);
+            $this->sendResponse([
+                'complejo_id' => $id,
+                'mensaje' => 'Actualizado correctamente'
+            ]);
         } catch (Exception $e) {
             $this->sendError($e);
         }
