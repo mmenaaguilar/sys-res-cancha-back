@@ -23,7 +23,7 @@ class AuthRepository
      */
     public function findByCorreo(string $correo): ?array
     {
-        $stmt = $this->db->prepare("SELECT usuario_id, nombre, correo, contrasena, estado FROM Usuarios WHERE correo = :correo LIMIT 1");
+        $stmt = $this->db->prepare("SELECT usuario_id, nombre, correo, contrasena, telefono FROM Usuarios WHERE correo = :correo LIMIT 1");
         $stmt->bindParam(':correo', $correo);
         $stmt->execute();
 
