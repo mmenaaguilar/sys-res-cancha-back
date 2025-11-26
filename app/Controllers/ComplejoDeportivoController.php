@@ -20,13 +20,20 @@ class ComplejoDeportivoController extends ApiHelper
         try {
             $data = $this->initRequest('POST');
             if ($data === null) return;
-            $complejoId = $data['complejo_id'] ?? null;
-            if (empty($complejoId)) {
-                $this->sendError(new Exception("El campo 'complejo_id' es requerido."), 400);
+            $usuarioId = $data['usuario_id'] ?? null;
+            $searchTerm = $data['termino_busqueda'] ?? null;
+            $page = $data['page'] ?? 1;
+            $limit = $data['limit'] ?? 10;
+
+            if (empty($usuarioId)) {
+                $this->sendError(new Exception("El usuario es requerido."), 400);
                 return;
             }
+            $usuarioId = (empty($usuarioId) || !is_numeric($usuarioId) || $usuarioId <= 0) ? null : (int)$usuarioId;
+            $page = max(1, (int)$page);
+            $limit = max(1, (int)$limit);
 
-            $complejos = $this->service->getAll($complejoId);
+            $complejos = $this->service->getAll($usuarioId, $searchTerm, $page, $limit);
             $this->sendResponse($complejos);
         } catch (Exception $e) {
             $this->sendError($e);

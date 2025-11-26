@@ -14,9 +14,45 @@ class ComplejoDeportivoService
         $this->repository = new ComplejoDeportivoRepository();
     }
 
-    public function getAll(?int $complejoId = null): array
+    private function formatPaginationResponse(array $result, int $page, int $limit): array
     {
-        return $this->repository->getAll($complejoId);
+        $total = $result['total'];
+
+        // Calcular total de páginas
+        $totalPages = $limit > 0 ? ceil($total / $limit) : 0;
+        if ($total == 0) $totalPages = 1; // Si no hay datos, hay 1 página vacía.
+
+        // Asegurar que la página actual no es mayor al total de páginas
+        $page = min($page, (int)$totalPages);
+
+        // Calcular next_page y prev_page
+        $hasNextPage = $page < $totalPages;
+        $hasPrevPage = $page > 1;
+
+        return [
+            'total' => $total,
+            'per_page' => $limit,
+            'current_page' => $page,
+            'last_page' => (int)$totalPages,
+
+            // ¡Nuevos campos booleanos!
+            'next_page' => $hasNextPage,
+            'prev_page' => $hasPrevPage,
+
+            'data' => $result['data']
+        ];
+    }
+    public function getAll(?int $usaurioId = null, ?string $searchTerm, int $page, int $limit): array
+    {
+        $page = max(1, $page);
+        $offset = ($page - 1) * $limit;
+        $searchTerm = trim($searchTerm ?? '');
+        
+        $result = $this->repository->getAll($usaurioId,
+            $searchTerm,
+            $limit,
+            $offset);
+        return $this->formatPaginationResponse($result, $page, $limit);
     }
 
     public function getById(int $id): array

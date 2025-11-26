@@ -52,21 +52,72 @@ class ComplejoDeportivoRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getAll(?int $complejoId = null): array
+    public function getAll(?int $usuarioId, ?string $searchTerm = null, int $limit, int $offset): array
     {
-        if ($complejoId !== null) {
-            $sql = "SELECT * FROM ComplejoDeportivo WHERE complejo_id = :id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(':id', $complejoId, PDO::PARAM_INT);
-            $stmt->execute();
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $result ? [$result] : [];
-        } else {
-            $sql = "SELECT * FROM ComplejoDeportivo ORDER BY nombre ASC";
-            $stmt = $this->db->query($sql);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $params = [];
+        $whereClauses = ["c.estado = 'activo'"]; // condición obligatoria
+
+        // 🔹 Si filtra por usuario
+        $join = "";
+        if ($usuarioId !== null) {
+            $join = "INNER JOIN UsuarioRol ur ON ur.complejo_id = c.complejo_id";
+            $whereClauses[] = "ur.estado = 'activo'";
+            $whereClauses[] = "ur.usuario_id = :usuarioId";
+            $params[':usuarioId'] = $usuarioId;
         }
+
+        // 🔹 Si hay término de búsqueda
+        if (!empty($searchTerm)) {
+            $whereClauses[] = "(c.nombre LIKE :searchTerm OR c.descripcion LIKE :searchTerm OR c.direccion_detalle LIKE :searchTerm)";
+            $params[':searchTerm'] = "%" . $searchTerm . "%";
+        }
+
+        // WHERE final
+        $whereSQL = "WHERE " . implode(" AND ", $whereClauses);
+
+        // ---- TOTAL ----
+        $totalSql = "
+        SELECT COUNT(c.complejo_id) AS total
+        FROM ComplejoDeportivo c
+        $join
+        $whereSQL
+    ";
+        $totalStmt = $this->db->prepare($totalSql);
+
+        foreach ($params as $key => $value) {
+            $totalStmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+
+        $totalStmt->execute();
+        $total = (int)($totalStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+
+        // ---- DATA ----
+        $dataSql = "
+        SELECT c.*
+        FROM ComplejoDeportivo c
+        $join
+        $whereSQL
+        ORDER BY c.nombre ASC
+        LIMIT :limit OFFSET :offset
+    ";
+        $dataStmt = $this->db->prepare($dataSql);
+
+        // Bind parámetros dinámicos
+        foreach ($params as $key => $value) {
+            $dataStmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $dataStmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $dataStmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+
+        $dataStmt->execute();
+        $data = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'total' => $total,
+            'data' => $data
+        ];
     }
+
 
     public function create(array $data): int
     {
