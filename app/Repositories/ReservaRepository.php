@@ -100,11 +100,9 @@ class ReservaRepository
     public function createReserva(array $data): int
     {
         $sql = "INSERT INTO Reserva (
-                    usuario_id, metodo_pago_id, total_pago, estado,
-                    izipay_token, izipay_estado
+                    usuario_id, metodo_pago_id, total_pago, estado
                 ) VALUES (
-                    :usuario_id, :metodo_pago_id, :total_pago, 'pendiente_pago',
-                    :token, 'pendiente'
+                    :usuario_id, :metodo_pago_id, :total_pago, :estado
                 )";
 
         $stmt = $this->db->prepare($sql);
@@ -113,7 +111,7 @@ class ReservaRepository
             ':usuario_id'     => $data['usuario_id'],
             ':metodo_pago_id' => $data['metodo_pago_id'],
             ':total_pago'     => $data['total_pago'],
-            ':token'          => $data['izipay_token'] ?? null
+            ':estado'     => $data['estado'],
         ]);
 
         return (int) $this->db->lastInsertId();
@@ -139,17 +137,6 @@ class ReservaRepository
         ]);
     }
 
-    public function confirmarPago(int $reservaId)
-    {
-        $sql = "UPDATE Reserva 
-                SET izipay_estado = 'pagado',
-                    estado = 'confirmada',
-                    fecha_pago = NOW()
-                WHERE reserva_id = :id";
-
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([':id' => $reservaId]);
-    }
 
     public function cancelarReserva(int $reservaId)
     {

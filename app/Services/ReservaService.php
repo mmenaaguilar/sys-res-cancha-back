@@ -140,8 +140,7 @@ class ReservaService
             'usuario_id'     => $data['usuario_id'],
             'metodo_pago_id' => $data['metodo_pago_id'],
             'total_pago'     => $total,
-            'izipay_token'   => $data['izipay_token'] ?? null
-        ]);
+            'estado'         => 'confirmada']);
 
         // Crear DETALLES
         foreach ($data['detalles'] as $d) {
@@ -152,16 +151,5 @@ class ReservaService
             'reserva_id' => $reservaId,
             'total'      => $total
         ];
-    }
-
-    public function confirmarPago(int $reservaId)
-    {
-        if (!$this->reservaRepo->getById($reservaId)) {
-            throw new Exception("Reserva no encontrada.");
-        }
-
-        $this->reservaRepo->confirmarPago($reservaId);
-
-        return ['mensaje' => 'Pago confirmado y reserva activada'];
     }
 }
