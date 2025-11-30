@@ -3,19 +3,14 @@
 -- ##################################################################
 
 -- 1. ELIMINAR BASE DE DATOS EXISTENTE (SOLO PARA DESARROLLO)
-DROP DATABASE IF EXISTS sistema_reservas_canchas;
+DROP DATABASE IF EXISTS sql12810053;
 
 -- 2. CREAR BASE DE DATOS
-CREATE DATABASE IF NOT EXISTS sistema_reservas_canchas 
+CREATE DATABASE IF NOT EXISTS sql12810053 
 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- 3. USAR LA BASE DE DATOS
-USE sistema_reservas_canchas;
-
--- ##################################################################
--- TABLAS DE UBIGEO (RECOMENDADO PARA BUSCADORES Y DIRECCIONES)
--- ##################################################################
-
+USE sql12810053;
 CREATE TABLE Departamento (
     departamento_id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL UNIQUE
@@ -55,14 +50,14 @@ CREATE TABLE Usuarios (
     usuario_id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
     telefono VARCHAR(255),
-    correo VARCHAR(255) UNIQUE NOT NULL,
+    correo VARCHAR(40) UNIQUE NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
     estado ENUM('activo', 'inactivo') DEFAULT 'activo'
 );
 
 CREATE TABLE Roles (
     rol_id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE
+    nombre VARCHAR(40) NOT NULL UNIQUE
 );
 
 -- ##################################################################
@@ -175,7 +170,7 @@ CREATE TABLE ServicioPorHorario (
 
 CREATE TABLE MetodoPago (
     metodo_pago_id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE
+    nombre VARCHAR(40) NOT NULL UNIQUE
 );
 
 CREATE TABLE Reserva (
@@ -217,7 +212,7 @@ CREATE TABLE ComplejoDeportivoFavoritos (
     favorito_id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
     complejo_id INT NOT NULL,
-    fecha_agregado DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fecha_agregado TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (usuario_id, complejo_id), 
     FOREIGN KEY (usuario_id) REFERENCES Usuarios(usuario_id) ON DELETE CASCADE,
     FOREIGN KEY (complejo_id) REFERENCES ComplejoDeportivo(complejo_id) ON DELETE CASCADE
@@ -238,7 +233,7 @@ CREATE TABLE CreditoUsuario (
     credito_id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
     monto DECIMAL(10,2) NOT NULL,
-    fecha_otorgado DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fecha_otorgado TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_expiracion DATE,
     origen_reserva_id INT,
     estado ENUM('activo','usado','expirado') DEFAULT 'activo',
