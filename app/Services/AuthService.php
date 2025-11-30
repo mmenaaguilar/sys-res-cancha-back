@@ -33,13 +33,16 @@ class AuthService
             // 3. Autenticación exitosa: generar token y limpiar datos
             unset($user['contrasena']); // ¡Eliminar el hash antes de devolver!
 
+            $roles = $this->userRepository->getRolesByUserId($user['usuario_id']);
+
             // Generación de Token (Simulado, usar librería JWT en producción)
             $token = 'JWT_' . hash('sha256', $user['correo'] . time() . getenv('APP_KEY'));
 
             return [
                 'user' => $user,
                 'token' => $token,
-                'expires_in' => 3600
+                'expires_in' => 3600,
+                'roles' => $roles
             ];
         }
 
@@ -65,6 +68,7 @@ class AuthService
             'usuario_id' => $usuarioId,
             'correo' => $data['correo'],
             'rol_asignado' => 'Deportista',
+            'roles' => []
         ];
     }
 }

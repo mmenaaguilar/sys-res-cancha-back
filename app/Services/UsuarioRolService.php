@@ -15,6 +15,39 @@ class UsuarioRolService
         $this->usuarioRolRepository = new UsuarioRolRepository();
     }
 
+    public function invitarGestor(string $email, int $complejoId, int $rolId): int
+    {
+        // 1. Validar Email
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception("El formato del correo no es válido.", 400);
+        }
+
+        // 2. Buscar Usuario por Email
+        $user = $this->usuarioRolRepository->findUserByEmail($email);
+        if (!$user) {
+            throw new Exception("No se encontró ningún usuario registrado con el correo: $email", 404);
+        }
+
+        // 3. Asignar Rol (Reutilizamos la lógica de crear)
+        return $this->createUsuarioRol([
+            'usuario_id' => $user['usuario_id'],
+            'complejo_id' => $complejoId,
+            'rol_id' => $rolId,
+            'estado' => 'activo'
+        ]);
+
+            if ($complejoId <= 0) {
+            throw new Exception("Error: ID de complejo inválido.");
+        }
+
+        return $this->createUsuarioRol([
+            'usuario_id' => $user['usuario_id'],
+            'complejo_id' => $complejoId, // <--- Aquí debe llegar un INT válido
+            'rol_id' => $rolId,
+            'estado' => 'activo'
+        ]);
+    }
+
     private function validateUsuarioRolData(array &$data): void
     {
         if (empty($data['usuario_id']) || !is_numeric($data['usuario_id'])) {

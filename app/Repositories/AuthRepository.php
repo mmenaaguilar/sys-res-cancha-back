@@ -72,4 +72,18 @@ class AuthRepository
             throw new Exception("Error al crear el usuario: " . $e->getMessage());
         }
     }
+
+    public function getRolesByUserId(int $usuarioId): array
+    {
+        // Obtenemos solo la columna rol_id de la tabla intermedia
+        // Importante: Filtramos por estado 'activo'
+        $sql = "SELECT rol_id FROM UsuarioRol 
+                WHERE usuario_id = :uid AND estado = 'activo'";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':uid' => $usuarioId]);
+        
+        // FETCH_COLUMN devuelve un array simple: [1, 2] en lugar de [['rol_id'=>1], ...]
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+    }
 }
