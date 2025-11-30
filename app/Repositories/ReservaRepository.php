@@ -45,11 +45,20 @@ class ReservaRepository
         $totalSql = "SELECT COUNT(DISTINCT r.reserva_id) AS total " . $baseSql . $where;
         $stmt = $this->db->prepare($totalSql);
         $stmt->execute($params);
-        $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+        $total = $stmt->fetch(\PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        // Datos
-        $dataSql = "SELECT DISTINCT r.reserva_id, r.usuario_id, u.nombre AS usuario_nombre, r.metodo_pago_id,
-                           r.total_pago, r.estado, r.fecha_creacion
+        // --- CORRECCIÓN AQUÍ ---
+        // Agregamos u.correo y u.telefono al SELECT
+        $dataSql = "SELECT DISTINCT 
+                        r.reserva_id, 
+                        r.usuario_id, 
+                        u.nombre AS usuario_nombre, 
+                        u.correo,     -- Agregado
+                        u.telefono,   -- Agregado (opcional, pero útil)
+                        r.metodo_pago_id,
+                        r.total_pago, 
+                        r.estado, 
+                        r.fecha_creacion
                     " . $baseSql . $where . " 
                     ORDER BY r.fecha_creacion DESC
                     LIMIT :limit OFFSET :offset";
@@ -58,11 +67,11 @@ class ReservaRepository
         foreach ($params as $key => &$val) {
             $stmt->bindParam($key, $val);
         }
-        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $stmt->bindParam(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindParam(':offset', $offset, \PDO::PARAM_INT);
         $stmt->execute();
 
-        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         return [
             'total' => (int)$total,
@@ -72,31 +81,45 @@ class ReservaRepository
 
     public function getReservaDetallePaginated(int $reservaId, int $limit, int $offset): array
     {
+        // 1. Total (sin cambios)
         $totalSql = "SELECT COUNT(*) AS total FROM ReservaDetalle WHERE reserva_id = :reserva_id";
         $stmt = $this->db->prepare($totalSql);
         $stmt->bindParam(':reserva_id', $reservaId, PDO::PARAM_INT);
         $stmt->execute();
-        $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+        $total = $stmt->fetch(\PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        $dataSql = "SELECT detalle_id, reserva_id, cancha_id, fecha, hora_inicio, hora_fin, precio
-                    FROM ReservaDetalle
-                    WHERE reserva_id = :reserva_id
-                    ORDER BY fecha ASC, hora_inicio ASC
+        // 2. Data con JOIN corregido a ComplejoDeportivo
+        $dataSql = "SELECT 
+                        rd.detalle_id, 
+                        rd.reserva_id, 
+                        rd.cancha_id, 
+                        rd.fecha, 
+                        rd.hora_inicio, 
+                        rd.hora_fin, 
+                        rd.precio,
+                        c.nombre AS cancha_nombre,
+                        cd.nombre AS complejo_nombre
+                    FROM ReservaDetalle rd
+                    INNER JOIN Cancha c ON rd.cancha_id = c.cancha_id
+                    INNER JOIN ComplejoDeportivo cd ON c.complejo_id = cd.complejo_id
+                    WHERE rd.reserva_id = :reserva_id
+                    ORDER BY rd.fecha ASC, rd.hora_inicio ASC
                     LIMIT :limit OFFSET :offset";
 
         $stmt = $this->db->prepare($dataSql);
-        $stmt->bindParam(':reserva_id', $reservaId, PDO::PARAM_INT);
-        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $stmt->bindParam(':reserva_id', $reservaId, \PDO::PARAM_INT);
+        $stmt->bindParam(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindParam(':offset', $offset, \PDO::PARAM_INT);
         $stmt->execute();
 
-        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         return [
             'total' => (int)$total,
             'data' => $data
         ];
     }
+
     public function createReserva(array $data): int
     {
         $sql = "INSERT INTO Reserva (

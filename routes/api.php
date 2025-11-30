@@ -107,3 +107,7 @@ $router->get('/api/ubigeo/distritos/{id}', 'UbigeoController@getDistritos');
 // Ruta auxiliar para obtener el nombre completo de una ubicación por su distrito ID
 $router->get('/api/ubigeo/detalle/{distrito_id}', 'UbigeoController@getDetalleUbicacion');
 
+$router->post('/api/gestores/list', 'UsuarioRolController@list');
+$router->post('/api/gestores/invite', 'UsuarioRolController@invite');
+$router->delete('/api/gestores/{id}', 'UsuarioRolController@delete');
+

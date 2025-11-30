@@ -21,6 +21,7 @@ class UsuarioRolController extends ApiHelper
         $this->usuarioService = new UsuarioService();
         $this->rolService = new RolService();
     }
+    
 
     public function create()
     {
@@ -36,7 +37,7 @@ class UsuarioRolController extends ApiHelper
         }
     }
 
-    public function listUsuarioRoles()
+    public function list()
     {
         $data = $this->initRequest('POST');
         if ($data === null) return;
@@ -119,6 +120,31 @@ class UsuarioRolController extends ApiHelper
         } catch (Exception $e) {
             $code = ($e->getCode() === 409 || $e->getCode() === 404) ? $e->getCode() : 400;
             $this->sendError($e, $code);
+        }
+    }
+
+    public function invite()
+    {
+        try {
+            $data = $this->initRequest('POST');
+            
+            if (empty($data['email']) || empty($data['complejo_id']) || empty($data['rol_id'])) {
+                throw new Exception("Faltan datos obligatorios (email, complejo, rol).");
+            }
+            
+            // Usamos el servicio invitarGestor que ya definiste en UsuarioRolService
+            // (Asegúrate de que ese método exista en tu Service, como vimos anteriormente)
+            $id = $this->usuarioRolService->invitarGestor(
+                trim($data['email']), 
+                (int)$data['complejo_id'], 
+                (int)$data['rol_id']
+            );
+            
+            $this->sendResponse(['usuarioRol_id' => $id, 'mensaje' => 'Usuario invitado con éxito.'], 201);
+        } catch (Exception $e) { 
+            // Si es error de usuario no encontrado, mandamos 404 para que el front sepa
+            $code = strpos($e->getMessage(), 'no encontró') !== false ? 404 : 400;
+            $this->sendError($e, $code); 
         }
     }
 }

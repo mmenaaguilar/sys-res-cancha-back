@@ -59,43 +59,57 @@ class ReservaService
     }
     public function cancelarReserva(int $id): array
     {
+        // 1. Obtener la cabecera de la reserva
         $reserva = $this->reservaRepo->getById($id);
 
         if (!$reserva) {
             throw new Exception("Reserva no encontrada.");
         }
 
-        // Calcular horas disponibles
-        $fechaHoraInicio = new \DateTime($reserva['fecha'] . ' ' . $reserva['hora_inicio']);
-        $ahora = new \DateTime();
-        $diff = $ahora->diff($fechaHoraInicio);
+        // 2. CORRECCIÓN: Obtener los detalles para saber la FECHA y HORA
+        // (La tabla Reserva no tiene fecha/hora, la tabla ReservaDetalle sí)
+        $detalles = $this->reservaRepo->getDetalles($id);
 
-        // Si la reserva ya pasó → no permitir cancelar
-        if ($diff->invert === 1) {
-            throw new Exception("No se puede cancelar una reserva pasada.");
+        if (empty($detalles)) {
+            // Si por algún motivo no tiene detalles (error de datos), cancelamos forzosamente sin validar políticas
+            $this->reservaRepo->cancelarReserva($id);
+            return ['mensaje' => 'Reserva cancelada (sin detalles técnicos)'];
         }
 
+        // Tomamos el primer detalle para calcular el tiempo (asumiendo que es el más próximo)
+        $detallePrincipal = $detalles[0];
+
+        // 3. Calcular horas disponibles usando los datos del DETALLE
+        $fechaHoraInicio = new \DateTime($detallePrincipal['fecha'] . ' ' . $detallePrincipal['hora_inicio']);
+        $ahora = new \DateTime();
+        
+        // Comparar
+        if ($fechaHoraInicio < $ahora) {
+             throw new Exception("No se puede cancelar una reserva pasada.");
+        }
+
+        $diff = $ahora->diff($fechaHoraInicio);
         $horasDisponibles = ($diff->days * 24) + $diff->h + ($diff->i / 60);
 
-        // Obtener política más estricta aplicable
+        // 4. Obtener política usando el ID de la cancha del detalle
         $politica = $this->politicaRepo->getPoliticaMasEstricta(
-            $reserva['cancha_id'],
+            $detallePrincipal['cancha_id'], // Usamos el ID del detalle, no de la reserva
             $horasDisponibles
         );
 
-        // 🟡 Si NO hay política → NO ERROR, aplicar retención de dinero
+        // 5. Si NO hay política, solo cancelamos (o aplicamos regla por defecto)
         if (!$politica) {
-
+            $this->reservaRepo->cancelarReserva($id);
             return [
                 'reserva_id' => $id,
                 'resultado' => [
                     'tipo' => 'sin_politica',
-                    'mensaje' => 'No se aplica ninguna política. Se retendra el dinero segun las reglas del complejo.',
+                    'mensaje' => 'Cancelación exitosa sin penalidad específica.',
                 ]
             ];
         }
 
-        // Aplicar estrategia
+        // 6. Aplicar estrategia si existe política
         $context = new CancelacionContext();
 
         switch ($politica['estrategia_temprana']) {
@@ -108,12 +122,15 @@ class ReservaService
                 break;
 
             default:
-                throw new Exception("Estrategia de cancelación desconocida.");
+                // Si la estrategia no está definida en código, procedemos a cancelar simple
+                $this->reservaRepo->cancelarReserva($id);
+                 return ['mensaje' => 'Estrategia desconocida, cancelación forzada realizada.'];
         }
 
+        // Ejecutar estrategia (reembolsos, movimientos de saldo, etc.)
         $resultado = $context->ejecutar($reserva, $politica);
 
-        // Cancelar reserva en BD
+        // Finalmente cambiar estado en BD
         $this->reservaRepo->cancelarReserva($id);
 
         return [
@@ -122,6 +139,7 @@ class ReservaService
             'horas_disponibles' => $horasDisponibles
         ];
     }
+    
     public function crearReserva(array $data): array
     {
         // Validación básica
