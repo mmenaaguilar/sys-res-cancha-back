@@ -76,6 +76,12 @@ class ServicioPorHorarioService
             $isUpdated = true;
         }
 
+        if (isset($data['is_obligatorio'])) {
+            // Convertir a int (1 o 0) para asegurar consistencia en BD
+            $dataToUpdate['is_obligatorio'] = ((bool)$data['is_obligatorio']) ? 1 : 0;
+            $isUpdated = true;
+        }
+
         if (!$isUpdated) {
             throw new Exception("Se requiere al menos 'estado' o 'horarioBase_id' para actualizar.", 400); // Cambio de mensaje
         }

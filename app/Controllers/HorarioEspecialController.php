@@ -102,7 +102,7 @@ class HorarioEspecialController extends ApiHelper
      */
     public function changeStatus(int $id)
     {
-        $this->initRequest('PUT');
+        
 
         try {
             $result = $this->service->changeStatus($id);

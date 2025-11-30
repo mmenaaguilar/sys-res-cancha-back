@@ -5,23 +5,148 @@
 -- ================================
 -- UBIGEO
 -- ================================
-INSERT INTO Departamento (nombre) VALUES ('Lima'); -- ID 1
-INSERT INTO Provincia (departamento_id, nombre) VALUES (1, 'Lima'); -- ID 1
-INSERT INTO Distrito (provincia_id, nombre) VALUES (1, 'Miraflores'); -- ID 1
-INSERT INTO Provincia (departamento_id, nombre) VALUES (1, 'Callao'); -- ID 2
-INSERT INTO Distrito (provincia_id, nombre) VALUES (2, 'Bellavista'); -- ID 2
+SET FOREIGN_KEY_CHECKS = 0;
+
+TRUNCATE TABLE Distrito;
+TRUNCATE TABLE Provincia;
+TRUNCATE TABLE Departamento;
+
+-- Reiniciar contadores
+ALTER TABLE Departamento AUTO_INCREMENT = 1;
+ALTER TABLE Provincia AUTO_INCREMENT = 1;
+ALTER TABLE Distrito AUTO_INCREMENT = 1;
+
+INSERT INTO Departamento (departamento_id, nombre) VALUES 
+(1, 'Arequipa'),
+(2, 'Lima'),
+(3, 'Tacna');
+
+-- ----------------------------------------------------------
+-- 2. PROVINCIAS
+-- ----------------------------------------------------------
+
+-- AREQUIPA (ID 1)
+INSERT INTO Provincia (provincia_id, departamento_id, nombre) VALUES 
+(1, 1, 'Arequipa'),
+(2, 1, 'Camaná'),
+(3, 1, 'Caravelí'),
+(4, 1, 'Castilla'),
+(5, 1, 'Caylloma'),
+(6, 1, 'Condesuyos'),
+(7, 1, 'Islay'),
+(8, 1, 'La Unión');
+
+-- LIMA (ID 2)
+INSERT INTO Provincia (provincia_id, departamento_id, nombre) VALUES 
+(9, 2, 'Lima'),
+(10, 2, 'Barranca'),
+(11, 2, 'Cajatambo'),
+(12, 2, 'Canta'),
+(13, 2, 'Cañete'),
+(14, 2, 'Huaral'),
+(15, 2, 'Huarochirí'),
+(16, 2, 'Huaura'),
+(17, 2, 'Oyón'),
+(18, 2, 'Yauyos');
+
+-- TACNA (ID 3)
+INSERT INTO Provincia (provincia_id, departamento_id, nombre) VALUES 
+(19, 3, 'Tacna'),
+(20, 3, 'Candarave'),
+(21, 3, 'Jorge Basadre'),
+(22, 3, 'Tarata');
+
+-- ----------------------------------------------------------
+-- 3. DISTRITOS (Selección Completa de Capitales y Principales)
+-- ----------------------------------------------------------
+
+-- === AREQUIPA: Arequipa (Prov 1) ===
+INSERT INTO Distrito (provincia_id, nombre) VALUES 
+(1, 'Arequipa'), (1, 'Alto Selva Alegre'), (1, 'Cayma'), (1, 'Cerro Colorado'), 
+(1, 'Characato'), (1, 'Chiguata'), (1, 'Jacobo Hunter'), (1, 'La Joya'), 
+(1, 'Mariano Melgar'), (1, 'Miraflores'), (1, 'Mollebaya'), (1, 'Paucarpata'), 
+(1, 'Pocsi'), (1, 'Polobaya'), (1, 'Quequeña'), (1, 'Sabandia'), (1, 'Sachaca'), 
+(1, 'San Juan de Siguas'), (1, 'San Juan de Tarucani'), (1, 'Santa Isabel de Siguas'), 
+(1, 'Santa Rita de Siguas'), (1, 'Socabaya'), (1, 'Tiabaya'), (1, 'Uchumayo'), 
+(1, 'Vitor'), (1, 'Yanahuara'), (1, 'Yarabamba'), (1, 'Yura'), 
+(1, 'José Luis Bustamante y Rivero');
+
+-- Arequipa: Camaná (Prov 2)
+INSERT INTO Distrito (provincia_id, nombre) VALUES 
+(2, 'Camaná'), (2, 'José María Quimper'), (2, 'Mariano Nicolás Valcárcel'), (2, 'Mariscal Cáceres'), 
+(2, 'Nicolás de Piérola'), (2, 'Ocoña'), (2, 'Quilca'), (2, 'Samuel Pastor');
+
+-- Arequipa: Islay (Prov 7)
+INSERT INTO Distrito (provincia_id, nombre) VALUES 
+(7, 'Mollendo'), (7, 'Cocachacra'), (7, 'Dean Valdivia'), (7, 'Islay'), (7, 'Mejía'), (7, 'Punta de Bombón');
+
+-- Arequipa: Caylloma (Prov 5) - Chivay
+INSERT INTO Distrito (provincia_id, nombre) VALUES (5, 'Chivay'), (5, 'Achoma'), (5, 'Cabanaconde'), (5, 'Majes');
+
+
+-- === LIMA: Lima Metropolitana (Prov 9) ===
+INSERT INTO Distrito (provincia_id, nombre) VALUES 
+(9, 'Cercado de Lima'), (9, 'Ancón'), (9, 'Ate'), (9, 'Barranco'), (9, 'Breña'), 
+(9, 'Carabayllo'), (9, 'Chaclacayo'), (9, 'Chorrillos'), (9, 'Cieneguilla'), 
+(9, 'Comas'), (9, 'El Agustino'), (9, 'Independencia'), (9, 'Jesús María'), 
+(9, 'La Molina'), (9, 'La Victoria'), (9, 'Lince'), (9, 'Los Olivos'), 
+(9, 'Lurigancho'), (9, 'Lurín'), (9, 'Magdalena del Mar'), (9, 'Miraflores'), 
+(9, 'Pachacámac'), (9, 'Pucusana'), (9, 'Pueblo Libre'), (9, 'Puente Piedra'), 
+(9, 'Punta Hermosa'), (9, 'Punta Negra'), (9, 'Rímac'), (9, 'San Bartolo'), 
+(9, 'San Borja'), (9, 'San Isidro'), (9, 'San Juan de Lurigancho'), 
+(9, 'San Juan de Miraflores'), (9, 'San Luis'), (9, 'San Martín de Porres'), 
+(9, 'San Miguel'), (9, 'Santa Anita'), (9, 'Santa María del Mar'), 
+(9, 'Santa Rosa'), (9, 'Santiago de Surco'), (9, 'Surquillo'), 
+(9, 'Villa El Salvador'), (9, 'Villa María del Triunfo');
+
+-- Lima: Cañete (Prov 13)
+INSERT INTO Distrito (provincia_id, nombre) VALUES 
+(13, 'San Vicente de Cañete'), (13, 'Asia'), (13, 'Calango'), (13, 'Cerro Azul'), 
+(13, 'Chilca'), (13, 'Coayllo'), (13, 'Imperial'), (13, 'Lunahuaná'), 
+(13, 'Mala'), (13, 'Nuevo Imperial'), (13, 'Pacarán'), (13, 'Quilmaná'), 
+(13, 'San Antonio'), (13, 'San Luis'), (13, 'Santa Cruz de Flores'), (13, 'Zúñiga');
+
+-- Lima: Huaral (Prov 14)
+INSERT INTO Distrito (provincia_id, nombre) VALUES (14, 'Huaral'), (14, 'Atavillos'), (14, 'Chancay'), (14, 'Aucallama');
+
+-- Lima: Huaura (Prov 16)
+INSERT INTO Distrito (provincia_id, nombre) VALUES (16, 'Huacho'), (16, 'Hualmay'), (16, 'Sayán'), (16, 'Huaura');
+
+
+-- === TACNA: Tacna (Prov 19) ===
+INSERT INTO Distrito (provincia_id, nombre) VALUES 
+(19, 'Tacna'), (19, 'Alto de la Alianza'), (19, 'Calana'), (19, 'Ciudad Nueva'), 
+(19, 'Inclán'), (19, 'Pachía'), (19, 'Palca'), (19, 'Pocollay'), (19, 'Sama'), 
+(19, 'Coronel Gregorio Albarracín Lanchipa'), (19, 'La Yarada-Los Palos');
+
+-- Tacna: Jorge Basadre (Prov 21)
+INSERT INTO Distrito (provincia_id, nombre) VALUES (21, 'Locumba'), (21, 'Ilabaya'), (21, 'Ite');
+
+-- Tacna: Tarata (Prov 22)
+INSERT INTO Distrito (provincia_id, nombre) VALUES (22, 'Tarata'), (22, 'Susapaya'), (22, 'Ticaco'), (22, 'Tarucachi');
+
+-- Tacna: Candarave (Prov 20)
+INSERT INTO Distrito (provincia_id, nombre) VALUES (20, 'Candarave'), (20, 'Cairani'), (20, 'Curibaya');
+SET FOREIGN_KEY_CHECKS = 1;
+
+
 
 -- ================================
 -- TIPO DE DEPORTE
 -- ================================
 INSERT INTO TipoDeporte (nombre, descripcion) VALUES
-('Básquet', 'Deporte en cancha dura con canastas'),
-('Tenis', 'Deporte individual o dobles en cancha de arcilla o cemento');
+('Fútbol', 'Deporte de equipo que busca anotar goles en campo amplio.'),
+('Básquet', 'Juego en equipo donde se anotan puntos encestando el balón.'),
+('Tenis', 'Juego individual o en dobles usando raquetas y una red.'),
+('Voley', 'Deporte en equipo que se juega pasando el balón sobre una red.');
 
 -- ================================
 -- ROLES
 -- ================================
-INSERT INTO Roles (nombre) VALUES ('super_admin');
+INSERT INTO Roles (rol_id, nombre) VALUES 
+(1,'super_admin'),
+(2,'gestor'),
+(3,'deportista');
 
 -- ================================
 -- USUARIOS

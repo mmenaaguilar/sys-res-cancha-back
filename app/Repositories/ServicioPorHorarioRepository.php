@@ -20,14 +20,16 @@ class ServicioPorHorarioRepository
     // --- CREATE (Asignar horario base a un servicio) ---
     public function create(array $data): int
     {
-        $sql = "INSERT INTO ServicioPorHorario (servicio_id, horarioBase_id) 
-                VALUES (:servicio_id, :horarioBase_id)";
+        $sql = "INSERT INTO ServicioPorHorario (servicio_id, horarioBase_id, is_obligatorio) 
+                VALUES (:servicio_id, :horarioBase_id, :is_obligatorio)";
 
         try {
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':servicio_id' => $data['servicio_id'],
-                ':horarioBase_id' => $data['horarioBase_id'] // Cambio de nombre de campo
+                ':horarioBase_id' => $data['horarioBase_id'], // Cambio de nombre de campo
+                ':is_obligatorio' => $data['is_obligatorio']
+
             ]);
             return (int)$this->db->lastInsertId();
         } catch (PDOException $e) {
@@ -53,6 +55,11 @@ class ServicioPorHorarioRepository
         if (isset($data['horarioBase_id'])) {
             $setClauses[] = "horarioBase_id = :horarioBase_id";
             $params[':horarioBase_id'] = $data['horarioBase_id'];
+        }
+
+        if (isset($data['is_obligatorio'])) {
+            $setClauses[] = "is_obligatorio = :is_obligatorio";
+            $params[':is_obligatorio'] = $data['is_obligatorio'];
         }
 
         if (empty($setClauses)) {
@@ -97,7 +104,7 @@ class ServicioPorHorarioRepository
 
         $selectAndFrom = "
             SELECT 
-                SPH.id, SPH.servicio_id, SPH.horarioBase_id
+                SPH.id, SPH.servicio_id, SPH.horarioBase_id, SPH.is_obligatorio, SPH.estado
             FROM ServicioPorHorario SPH
             WHERE SPH.servicio_id = :servicio_id
         ";

@@ -47,7 +47,6 @@ class ComplejoDeportivoService
         $page = max(1, $page);
         $offset = ($page - 1) * $limit;
         $searchTerm = trim($searchTerm ?? '');
-        
         $result = $this->repository->getAll($usaurioId,
             $searchTerm,
             $limit,
@@ -62,32 +61,43 @@ class ComplejoDeportivoService
         return $complejo;
     }
 
-    public function create(array $data, ?array $file = null): int
+ public function create(array $data, ?array $file = null): int
     {
-        $this->validate($data);
-        $data['url_imagen'] = $this->handleImage($file);
+        if (empty($data['nombre'])) {
+            throw new Exception("El nombre del complejo es obligatorio.");
+        }
+        $data['estado'] = $data['estado'] ?? 'activo';
+
+        // ✅ LÓGICA DE CREATE: Procesar archivo si viene
+        if ($file && isset($file['tmp_name'])) {
+            $data['url_imagen'] = $this->handleImage($file); // Guarda la URL que genera handleImage
+        } else {
+             $data['url_imagen'] = null; // Si no viene archivo, es null
+        }
+        
         return $this->repository->create($data);
     }
 
+    // ✅ CORRECCIÓN CLAVE AQUÍ: Lógica para mantener la URL
     public function update(int $id, array $data, ?array $file = null): bool
     {
         $complejo = $this->repository->getById($id);
         if (!$complejo) throw new Exception("Complejo no encontrado.");
 
         $this->validate($data);
-
-        // Si se sube nueva imagen, reemplaza
+        
+        // 1. Si se sube nueva imagen (ARCHIVO en $_FILES), procesar
         if ($file && isset($file['tmp_name']) && is_uploaded_file($file['tmp_name'])) {
-            // Opcional: eliminar imagen anterior
-            if (!empty($complejo['url_imagen'])) {
-                $oldPath = __DIR__ . '/../../public' . $complejo['url_imagen'];
-                if (file_exists($oldPath)) unlink($oldPath);
-            }
+            // Manejar subida (y opcionalmente eliminar la anterior)
             $data['url_imagen'] = $this->handleImage($file);
         } else {
+            // 2. Si NO se sube archivo nuevo: MANTENER LA URL ANTERIOR DE LA BD
             $data['url_imagen'] = $complejo['url_imagen'];
         }
 
+        // Si el frontend envía 'url_imagen' (como texto) y no hay 'file', aquí PHP usará
+        // $data['url_imagen'] = $complejo['url_imagen'] (el valor viejo de la BD). 
+        
         return $this->repository->update($id, $data);
     }
 

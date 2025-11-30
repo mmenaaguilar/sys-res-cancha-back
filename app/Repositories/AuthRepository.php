@@ -56,7 +56,7 @@ class AuthRepository
 
             // 2. Insertar en la tabla UsuarioRol (Asignar Rol 'Deportista' = 1)
             // Asumimos rol_id = 1 es Deportista y complejo_id es NULL.
-            $rolIdDeportista = 1;
+            $rolIdDeportista = 3;
 
             $stmtRol = $this->db->prepare("INSERT INTO UsuarioRol (usuario_id, rol_id, complejo_id) VALUES (:usuario_id, :rol_id, NULL)");
             $stmtRol->execute([

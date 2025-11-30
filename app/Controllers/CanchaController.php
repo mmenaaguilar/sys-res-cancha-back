@@ -1,132 +1,121 @@
 <?php
-// app/Controllers/CanchaController.php
-
 namespace App\Controllers;
 
-use App\Services\CanchaService;
-use App\Core\Helpers\ApiHelper;
+use App\Services\CanchaService; // Asegúrate que tu Service use el nuevo Repo
 use Exception;
 
-class CanchaController extends ApiHelper
+class CanchaController
 {
-    private CanchaService $canchaService;
+    private $canchaService;
 
     public function __construct()
     {
+        // Asumimos que CanchaService ya instancia CanchaRepository
         $this->canchaService = new CanchaService();
     }
 
-    /**
-     * [READ] Listar canchas activas por complejo.
-     */
-    public function listByComplejo()
-    {
-        $data = $this->initRequest('POST');
-        if ($data === null) return;
-
-        $complejoId = $data['complejo_id'] ?? null;
-
-        try {
-            $complejoId = (empty($complejoId) || !is_numeric($complejoId) || $complejoId <= 0) ? null : (int)$complejoId;
-
-            $list = $this->canchaService->getByComplejo($complejoId);
-            $this->sendResponse($list);
-        } catch (Exception $e) {
-            $this->sendError($e);
-        }
+    // Helper para CORS y JSON
+    private function jsonResponse($data, $code = 200) {
+        header("Access-Control-Allow-Origin: *");
+        header("Content-Type: application/json");
+        http_response_code($code);
+        echo json_encode($data);
+        exit;
     }
 
     public function listByComplejoPaginated()
     {
-        $data = $this->initRequest('POST');
-        if ($data === null) return;
+        header("Access-Control-Allow-Origin: *");
+        header("Access-Control-Allow-Methods: POST");
+        header("Content-Type: application/json");
 
-        $complejoId = $data['complejo_id'] ?? null;
-        $tipoDeporteId = $data['tipo_deporte_id'] ?? null;
-        $searchTerm = $data['searchTerm'] ?? null;
-        $page = $data['page'] ?? 1;
-        $limit = $data['limit'] ?? 10;
+        $input = json_decode(file_get_contents("php://input"), true);
+        $complejoId = $input['complejo_id'] ?? null;
+        
+        // Validación estricta de ID
+        if (!$complejoId) {
+            echo json_encode(['data' => [], 'total' => 0]);
+            return;
+        }
 
         try {
-            $complejoId = (empty($complejoId) || !is_numeric($complejoId) || $complejoId <= 0) ? null : (int)$complejoId;
-            $tipoDeporteId = (!empty($tipoDeporteId) && is_numeric($tipoDeporteId) && $tipoDeporteId > 0) ? (int)$tipoDeporteId : null;
-            $page = max(1, (int)$page);
-            $limit = max(1, (int)$limit);
+            // Parámetros opcionales
+            $tipoDeporte = $input['tipo_deporte_id'] ?? null;
+            $search = $input['searchTerm'] ?? '';
+            $page = $input['page'] ?? 1;
+            $limit = $input['limit'] ?? 10;
 
-            $list = $this->canchaService->getByComplejoPaginated($complejoId, $tipoDeporteId, $searchTerm, $page, $limit);
-            $this->sendResponse($list);
+            // Llamada al servicio
+            $result = $this->canchaService->getByComplejoPaginated($complejoId, $tipoDeporte, $search, $page, $limit);
+            
+            echo json_encode($result); // Devuelve { data: [...], total: N }
+
         } catch (Exception $e) {
-            $this->sendError($e);
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
         }
     }
 
-    /**
-     * [CREATE] Crear una nueva cancha.
-     */
     public function create()
     {
-        $data = $this->initRequest('POST');
-        if ($data === null) return;
+        header("Access-Control-Allow-Origin: *");
+        header("Content-Type: application/json");
+        
+        $input = json_decode(file_get_contents("php://input"), true);
+
+        if (empty($input['complejo_id']) || empty($input['nombre'])) {
+            $this->jsonResponse(['error' => 'Faltan datos'], 400);
+        }
 
         try {
-            $newId = $this->canchaService->createCancha($data);
-            $this->sendResponse(['cancha_id' => $newId], 201);
+            $id = $this->canchaService->createCancha($input);
+            $this->jsonResponse(['message' => 'Cancha creada', 'id' => $id], 201);
         } catch (Exception $e) {
-            $this->sendError($e);
+            $this->jsonResponse(['error' => $e->getMessage()], 500);
         }
     }
 
-    /**
-     * [UPDATE] Editar una cancha existente.
-     */
-    public function update(int $id)
+    public function update($id)
     {
-        $data = $this->initRequest('PUT');
-        if ($data === null) return;
+        header("Access-Control-Allow-Origin: *");
+        header("Access-Control-Allow-Methods: PUT, OPTIONS");
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') return;
+
+        $input = json_decode(file_get_contents("php://input"), true);
 
         try {
-            $this->canchaService->updateCancha($id, $data);
-            $this->sendResponse(['cancha_id' => $id, 'mensaje' => 'Cancha actualizada con éxito.']);
+            $this->canchaService->updateCancha($id, $input);
+            $this->jsonResponse(['message' => 'Actualizado']);
         } catch (Exception $e) {
-            $this->sendError($e);
+            $this->jsonResponse(['error' => $e->getMessage()], 500);
         }
     }
 
-    /**
-     * [DELETE] Eliminar físicamente una cancha.
-     */
-    public function delete(int $id)
+    public function changeStatus($id)
     {
-        $data = $this->initRequest('DELETE');
+        header("Access-Control-Allow-Origin: *");
+        header("Access-Control-Allow-Methods: PUT, OPTIONS");
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') return;
 
         try {
-            $deleted = $this->canchaService->deleteCancha($id);
-            if (!$deleted) {
-                $this->sendError('Cancha no encontrada o ya eliminada.', 404);
-                return;
-            }
-            $this->sendResponse(['cancha_id' => $id, 'mensaje' => 'Cancha eliminada físicamente con éxito.']);
+            $res = $this->canchaService->changeStatus($id);
+            $this->jsonResponse($res);
         } catch (Exception $e) {
-            $this->sendError($e);
+            $this->jsonResponse(['error' => $e->getMessage()], 500);
         }
     }
 
-    /**
-     * [CHANGE STATUS] Cambiar estado activo/inactivo.
-     */
-    public function changeStatus(int $id)
+    public function delete($id)
     {
-        $data = $this->initRequest('PUT');
+        header("Access-Control-Allow-Origin: *");
+        header("Access-Control-Allow-Methods: DELETE, OPTIONS");
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
         try {
-            $result = $this->canchaService->changeStatus($id);
-            $this->sendResponse([
-                'cancha_id' => $id,
-                'nuevo_estado' => $result['nuevo_estado'],
-                'mensaje' => "Estado cambiado a {$result['nuevo_estado']}."
-            ]);
+            $this->canchaService->deleteCancha($id);
+            $this->jsonResponse(['message' => 'Eliminado']);
         } catch (Exception $e) {
-            $this->sendError($e);
+            $this->jsonResponse(['error' => $e->getMessage()], 500);
         }
     }
 }

@@ -37,7 +37,7 @@ class ContactoRepository
         // 1. Definición de la consulta base y cláusulas condicionales
         $selectAndFrom = "SELECT contacto_id, complejo_id, tipo, valor_contacto, estado
                           FROM Contactos
-                          WHERE estado = 'activo'";
+                          WHERE 1 = 1";
 
         $totalFrom = "SELECT COUNT(contacto_id) AS total FROM Contactos WHERE estado = 'activo'";
 

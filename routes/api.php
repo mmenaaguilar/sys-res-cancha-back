@@ -75,6 +75,7 @@ $router->delete('/api/canchas/{id}', 'CanchaController@delete');
 $router->post('/api/complejos/list', 'ComplejoDeportivoController@getComplejo');
 $router->post('/api/complejos', 'ComplejoDeportivoController@create');
 $router->put('/api/complejos/{id}', 'ComplejoDeportivoController@update');
+$router->post('/api/complejos/{id}', 'ComplejoDeportivoController@update'); 
 $router->put('/api/complejos/status/{id}', 'ComplejoDeportivoController@changeStatus');
 $router->delete('/api/complejos/{id}', 'ComplejoDeportivoController@delete');
 
@@ -98,3 +99,11 @@ $router->put('/api/reserva/cancelar/{id}', 'ReservaController@cancelar');
 $router->post('/api/favoritos', 'ComplejoDeportivoFavoritoController@create');
 $router->delete('/api/favoritos/{id}', 'ComplejoDeportivoFavoritoController@delete');
 $router->post('/api/favoritos/list', 'ComplejoDeportivoFavoritoController@listByUsuario');
+
+// GESTIÓN DE UBIGEO 
+$router->get('/api/ubigeo/departamentos', 'UbigeoController@getDepartamentos');
+$router->get('/api/ubigeo/provincias/{id}', 'UbigeoController@getProvincias');
+$router->get('/api/ubigeo/distritos/{id}', 'UbigeoController@getDistritos');
+// Ruta auxiliar para obtener el nombre completo de una ubicación por su distrito ID
+$router->get('/api/ubigeo/detalle/{distrito_id}', 'UbigeoController@getDetalleUbicacion');
+

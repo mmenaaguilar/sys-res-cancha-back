@@ -22,6 +22,30 @@ class UbigeoRepository
      * @param string $level 'departamento', 'provincia', 'distrito'
      * @return array
      */
+    public function getAllDepartamentos(): array
+    {
+        // Seleccionamos 'nombre AS name' para estandarizar con el frontend
+        $sql = "SELECT departamento_id AS id, nombre AS name FROM Departamento ORDER BY nombre ASC";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getProvinciasByDepartamentoId(int $depId): array
+    {
+        $sql = "SELECT provincia_id AS id, nombre AS name FROM Provincia WHERE departamento_id = :id ORDER BY nombre ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $depId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getDistritosByProvinciaId(int $provId): array
+    {
+        $sql = "SELECT distrito_id AS id, nombre AS name FROM Distrito WHERE provincia_id = :id ORDER BY nombre ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $provId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function searchDistritosByHierarchy(array $components, string $level): array
     {
         try {

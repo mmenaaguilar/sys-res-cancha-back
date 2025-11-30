@@ -21,6 +21,22 @@ class UbigeoService
      * @param string $level Nivel inferido ('departamento', 'provincia', 'distrito')
      * @return array
      */
+
+    public function getDepartamentos(): array
+    {
+        return $this->ubigeoRepository->getAllDepartamentos();
+    }
+
+    public function getProvincias(int $depId): array
+    {
+        return $this->ubigeoRepository->getProvinciasByDepartamentoId($depId);
+    }
+
+    public function getDistritos(int $provId): array
+    {
+        return $this->ubigeoRepository->getDistritosByProvinciaId($provId);
+    }
+    
     public function findDistritosByHierarchy(array $components, string $level): array
     {
         // El controlador ya validó el término mínimo, aquí solo orquestamos

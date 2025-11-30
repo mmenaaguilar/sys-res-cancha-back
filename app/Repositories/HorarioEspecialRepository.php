@@ -28,8 +28,8 @@ class HorarioEspecialRepository
     public function create(array $data): int
     {
         $sql = "INSERT INTO HorarioEspecial
-                (cancha_id, fecha, hora_inicio, hora_fin, monto, estado, descripcion)
-                VALUES (:cancha_id, :fecha, :hora_inicio, :hora_fin, :monto, :estado, :descripcion)";
+                (cancha_id, fecha, hora_inicio, hora_fin, monto, estado_horario, estado, descripcion)
+                VALUES (:cancha_id, :fecha, :hora_inicio, :hora_fin, :monto, :estado_horario, :estado, :descripcion)";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
@@ -38,6 +38,7 @@ class HorarioEspecialRepository
             ':hora_inicio' => $data['hora_inicio'],
             ':hora_fin' => $data['hora_fin'],
             ':monto' => $data['monto'] ?? null,
+            ':estado_horario' => $data['estado_horario'] ?? null,
             ':estado' => $data['estado'] ?? 'disponible',
             ':descripcion' => $data['descripcion'] ?? null
         ]);
@@ -54,6 +55,7 @@ class HorarioEspecialRepository
                     hora_inicio = :hora_inicio,
                     hora_fin = :hora_fin,
                     monto = :monto,
+                    estado_horario = :estado_horario,
                     estado = :estado,
                     descripcion = :descripcion
                 WHERE horario_especial_id = :id";
@@ -65,6 +67,7 @@ class HorarioEspecialRepository
             ':hora_inicio' => $data['hora_inicio'],
             ':hora_fin' => $data['hora_fin'],
             ':monto' => $data['monto'] ?? null,
+            ':estado_horario' => $data['estado_horario'] ?? null,
             ':estado' => $data['estado'] ?? 'disponible',
             ':descripcion' => $data['descripcion'] ?? null,
             ':id' => $id

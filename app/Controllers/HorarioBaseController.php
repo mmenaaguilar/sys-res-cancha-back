@@ -80,8 +80,7 @@ class HorarioBaseController extends ApiHelper
     }
     public function changeStatus(int $id)
     {
-        $data = $this->initRequest('PUT');
-
+        
         try {
             $result = $this->service->changeStatus($id);
             $this->sendResponse([

@@ -36,9 +36,9 @@ class ServicioRepository
     // --- READ (Listado Paginado con Filtros: complejoId y searchTerm) ---
     public function getServiciosPaginatedByFilters(?int $complejoId, ?string $searchTerm, int $limit, int $offset): array
     {
-        $selectAndFrom = "SELECT servicio_id, complejo_id, nombre, descripcion, monto, is_obligatorio, estado 
+        $selectAndFrom = "SELECT servicio_id, complejo_id, nombre, descripcion, monto, estado 
                           FROM Servicios 
-                          WHERE estado = 'activo'";
+                          WHERE 1 = 1";
         $totalFrom = "SELECT COUNT(servicio_id) AS total FROM Servicios WHERE estado = 'activo'";
 
         $whereClauses = [];
@@ -105,7 +105,6 @@ class ServicioRepository
             ':nombre' => $data['nombre'],
             ':descripcion' => $data['descripcion'] ?? null,
             ':monto' => $data['monto'],
-            ':is_obligatorio' => $data['is_obligatorio'] ?? 0,
             ':id' => $id,
         ]);
     }

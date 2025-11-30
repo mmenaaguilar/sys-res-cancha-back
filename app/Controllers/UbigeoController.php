@@ -4,9 +4,10 @@
 namespace App\Controllers;
 
 use App\Services\UbigeoService;
+use App\Core\Helpers\ApiHelper;
 use Exception;
 
-class UbigeoController
+class UbigeoController extends ApiHelper
 {
     private UbigeoService $ubigeoService;
 
@@ -20,6 +21,38 @@ class UbigeoController
      * Detecta el nivel de búsqueda basado en el conteo de comas.
      * @return void
      */
+public function getDepartamentos()
+    {
+        try {
+            $data = $this->ubigeoService->getDepartamentos();
+            $this->sendResponse($data);
+        } catch (Exception $e) {
+            $this->sendError($e);
+        }
+    }
+
+    // Endpoint: /api/ubigeo/provincias/{id}
+    public function getProvincias(int $id)
+    {
+        try {
+            $data = $this->ubigeoService->getProvincias($id);
+            $this->sendResponse($data);
+        } catch (Exception $e) {
+            $this->sendError($e);
+        }
+    }
+
+    // Endpoint: /api/ubigeo/distritos/{id}
+    public function getDistritos(int $id)
+    {
+        try {
+            $data = $this->ubigeoService->getDistritos($id);
+            $this->sendResponse($data);
+        } catch (Exception $e) {
+            $this->sendError($e);
+        }
+    }
+    
     public function search()
     {
         header('Content-Type: application/json');

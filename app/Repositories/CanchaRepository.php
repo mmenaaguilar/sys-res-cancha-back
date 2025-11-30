@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Repositories;
 
 use App\Core\Database;
@@ -15,24 +14,28 @@ class CanchaRepository
         $this->db = Database::getConnection();
     }
 
-    /**
-     * Obtiene una cancha por su ID (opcional para validaciones).
-     */
-    public function getById(int $id): ?array
+    // --- CREAR (Solución al error HY093) ---
+    public function create(array $data): int
     {
-        $sql = "SELECT * FROM Cancha WHERE cancha_id = :id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt->execute();
+        $sql = "INSERT INTO Cancha (complejo_id, tipo_deporte_id, nombre, descripcion, estado) 
+                VALUES (:complejo_id, :tipo_deporte_id, :nombre, :descripcion, :estado)";
 
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result ?: null;
+        $stmt = $this->db->prepare($sql);
+        
+        // Usamos bindValue para evitar problemas de referencia
+        $stmt->bindValue(':complejo_id', $data['complejo_id'], PDO::PARAM_INT);
+        $stmt->bindValue(':tipo_deporte_id', $data['tipo_deporte_id'], PDO::PARAM_INT);
+        $stmt->bindValue(':nombre', $data['nombre']);
+        $stmt->bindValue(':descripcion', $data['descripcion'] ?? '');
+        $stmt->bindValue(':estado', $data['estado'] ?? 'activo');
+
+        if (!$stmt->execute()) {
+            throw new Exception("Error al insertar cancha en BD.");
+        }
+
+        return (int)$this->db->lastInsertId();
     }
 
-    /**
-     * ✔️ Trae canchas activas por complejo_id
-     * (Este es el método que usará tu Facade)
-     */
     public function getByComplejo(int $complejoId, ?int $tipoDeporteId = null): array
     {
         $sql = "SELECT c.cancha_id, c.complejo_id, c.tipo_deporte_id, c.nombre, c.descripcion, c.estado
@@ -62,131 +65,102 @@ class CanchaRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // --- LISTAR PAGINADO (Solución a "Error al cargar datos") ---
+    public function getByComplejoPaginated($complejoId, $tipoDeporteId, $search, $limit, $offset)
+    {
+        $params = [':cid' => $complejoId];
+        $whereClause = "WHERE c.complejo_id = :cid AND c.estado != 'eliminado'";
 
-    public function getByComplejoPaginated(
-        int $complejoId,
-        ?int $tipoDeporteId = null,
-        ?string $searchTerm = null,
-        int $limit = 10,
-        int $offset = 0
-    ): array {
-        $params = [':complejo_id' => $complejoId];
-        $whereSql = " WHERE complejo_id = :complejo_id";
-
+        // Filtro Deporte
         if ($tipoDeporteId !== null && $tipoDeporteId > 0) {
-            $whereSql .= " AND tipo_deporte_id = :tipo_deporte_id";
-            $params[':tipo_deporte_id'] = $tipoDeporteId;
+            $whereClause .= " AND c.tipo_deporte_id = :tid";
+            $params[':tid'] = $tipoDeporteId;
         }
 
-        if (!empty($searchTerm)) {
-            $whereSql .= " AND (nombre LIKE :search OR descripcion LIKE :search)";
-            $params[':search'] = '%' . $searchTerm . '%';
+        // Filtro Búsqueda
+        if (!empty($search)) {
+            $whereClause .= " AND (c.nombre LIKE :search OR c.descripcion LIKE :search)";
+            $params[':search'] = "%$search%";
         }
 
-        // Conteo total
-        $totalStmt = $this->db->prepare("SELECT COUNT(*) AS total FROM Cancha" . $whereSql);
-        foreach ($params as $key => $value) {
-            $totalStmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        // A. Contar Total
+        $countSql = "SELECT COUNT(*) as total FROM Cancha c $whereClause";
+        $countStmt = $this->db->prepare($countSql);
+        foreach ($params as $key => $val) {
+            $countStmt->bindValue($key, $val, is_int($val) ? PDO::PARAM_INT : PDO::PARAM_STR);
         }
-        $totalStmt->execute();
-        $total = (int)$totalStmt->fetch(PDO::FETCH_ASSOC)['total'];
+        $countStmt->execute();
+        $total = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-        // Datos paginados
-        $stmt = $this->db->prepare(
-            "SELECT cancha_id, complejo_id, tipo_deporte_id, nombre, url_imagen, descripcion, estado
-         FROM Cancha
-         $whereSql
-         ORDER BY cancha_id ASC
-         LIMIT :limit OFFSET :offset"
-        );
-        foreach ($params as $key => $value) {
-            $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        // B. Obtener Datos (Con LEFT JOIN para seguridad)
+        $sql = "SELECT c.*, td.nombre as tipo_deporte_nombre 
+                FROM Cancha c
+                LEFT JOIN TipoDeporte td ON c.tipo_deporte_id = td.tipo_deporte_id
+                $whereClause 
+                ORDER BY c.cancha_id DESC 
+                LIMIT :limit OFFSET :offset";
+        
+        $stmt = $this->db->prepare($sql);
+        
+        // Bind de filtros
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val, is_int($val) ? PDO::PARAM_INT : PDO::PARAM_STR);
         }
-        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        
+        // Bind de Paginación (CRUCIAL: Deben ser INT explícitos)
+        $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+        
         $stmt->execute();
-        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return [
-            'total' => $total,
-            'data' => $data
+            'data' => $stmt->fetchAll(PDO::FETCH_ASSOC),
+            'total' => (int)$total
         ];
     }
 
-
-    /**
-     * Crea una nueva cancha.
-     */
-    public function create(array $data): int
-    {
-        $sql = "INSERT INTO Cancha (complejo_id, tipo_deporte_id, nombre, descripcion, estado)
-                VALUES (:complejo_id, :tipo_deporte_id,  :descripcion, :estado)";
-
-        $stmt = $this->db->prepare($sql);
-
-        $stmt->bindParam(':complejo_id', $data['complejo_id'], PDO::PARAM_INT);
-        $stmt->bindParam(':tipo_deporte_id', $data['tipo_deporte_id'], PDO::PARAM_INT);
-        $stmt->bindParam(':nombre', $data['nombre']);
-        $stmt->bindParam(':descripcion', $data['descripcion']);
-        $stmt->bindParam(':estado', $data['estado']);
-
-        if ($stmt->execute()) {
-            return (int)$this->db->lastInsertId();
-        }
-
-        throw new Exception("Error al crear la cancha.");
-    }
-
-    /**
-     * Actualiza una cancha existente.
-     */
+    // --- ACTUALIZAR ---
     public function update(int $id, array $data): bool
     {
-        $sql = "UPDATE Cancha
-                SET complejo_id = :complejo_id,
-                    tipo_deporte_id = :tipo_deporte_id,
-                    nombre = :nombre,
-                    url_imagen = :url_imagen,
-                    descripcion = :descripcion,
-                    estado = :estado
+        $sql = "UPDATE Cancha SET 
+                complejo_id = :cid,
+                tipo_deporte_id = :tid,
+                nombre = :nombre, 
+                descripcion = :desc, 
+                estado = :estado 
                 WHERE cancha_id = :id";
 
         $stmt = $this->db->prepare($sql);
-
-        $stmt->bindParam(':complejo_id', $data['complejo_id'], PDO::PARAM_INT);
-        $stmt->bindParam(':tipo_deporte_id', $data['tipo_deporte_id'], PDO::PARAM_INT);
-        $stmt->bindParam(':nombre', $data['nombre']);
-        $stmt->bindParam(':url_imagen', $data['url_imagen']);
-        $stmt->bindParam(':descripcion', $data['descripcion']);
-        $stmt->bindParam(':estado', $data['estado']);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
+        $stmt->bindValue(':cid', $data['complejo_id'], PDO::PARAM_INT);
+        $stmt->bindValue(':tid', $data['tipo_deporte_id'], PDO::PARAM_INT);
+        $stmt->bindValue(':nombre', $data['nombre']);
+        $stmt->bindValue(':desc', $data['descripcion'] ?? '');
+        $stmt->bindValue(':estado', $data['estado']);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        
         return $stmt->execute();
     }
 
-    /**
-     * Elimina una cancha.
-     */
+    // --- CAMBIAR ESTADO ---
+    public function changeStatus(int $id, string $status): bool
+    {
+        $stmt = $this->db->prepare("UPDATE Cancha SET estado = :st WHERE cancha_id = :id");
+        return $stmt->execute([':st' => $status, ':id' => $id]);
+    }
+
+    // --- ELIMINAR ---
     public function delete(int $id): bool
     {
+        // Esto eliminará la fila de la base de datos permanentemente
         $sql = "DELETE FROM Cancha WHERE cancha_id = :id";
         $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         return $stmt->execute();
     }
-
-    /**
-     * Cambia el estado (activo/inactivo).
-     */
-    public function changeStatus(int $id, string $estado): bool
-    {
-        $sql = "UPDATE Cancha SET estado = :estado WHERE cancha_id = :id";
-        $stmt = $this->db->prepare($sql);
-
-        $stmt->bindParam(':estado', $estado);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
-        return $stmt->execute();
+    
+    public function getById($id) {
+        $stmt = $this->db->prepare("SELECT * FROM Cancha WHERE cancha_id = :id");
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }
