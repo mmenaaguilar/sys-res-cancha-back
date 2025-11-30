@@ -184,12 +184,9 @@ CREATE TABLE Reserva (
     metodo_pago_id INT,
     total_pago DECIMAL(10,2) DEFAULT 0.00,
 
-    -- ESTADOS DE LA RESERVA
+    -- ESTADOS DE LA RESERVA (Mantenemos los estados de negocio)
     estado ENUM('pendiente_pago', 'confirmada', 'cancelado') DEFAULT 'pendiente_pago',
-
-    -- CAMPOS DE IZIPAY
-    izipay_token VARCHAR(200) NULL,
-    izipay_estado ENUM('pendiente', 'iniciado', 'pagado', 'fallido') DEFAULT 'pendiente',
+    
     fecha_pago DATETIME NULL,
 
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

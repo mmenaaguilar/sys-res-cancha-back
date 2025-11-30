@@ -91,8 +91,6 @@ $router->put('/api/horario-especial/status/{id}', 'HorarioEspecialController@cha
 $router->post('/api/reserva/list', 'ReservaController@listReservas');
 $router->post('/api/reserva-detalle/list', 'ReservaController@listReservaDetalle');
 $router->post('/api/reserva', 'ReservaController@crear');           
-$router->post('/api/reserva/confirmar-pago/{id}', 'ReservaController@confirmarPago'); 
-$router->post('/api/reserva/izipay-webhook', 'ReservaController@izipayWebhook');
 $router->put('/api/reserva/cancelar/{id}', 'ReservaController@cancelar');
 
 // Rutas para la gestión de canchas fav

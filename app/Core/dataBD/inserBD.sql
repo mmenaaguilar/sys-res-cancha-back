@@ -233,11 +233,11 @@ INSERT INTO MetodoPago (nombre) VALUES
 -- ================================
 -- RESERVAS
 -- ================================
-INSERT INTO Reserva (usuario_id, metodo_pago_id, total_pago, estado, izipay_token, izipay_estado, fecha_pago)
+INSERT INTO Reserva (usuario_id, metodo_pago_id, total_pago, estado, fecha_pago)
 VALUES
-(2, 1, 80.00, 'confirmada', NULL, 'pagado', '2025-11-20 10:00:00'), -- Reserva 1
-(3, 2, 150.00, 'pendiente_pago', 'TKN_12345', 'iniciado', NULL),       -- Reserva 2
-(2, 1, 95.00, 'cancelado', NULL, 'fallido', '2025-11-21 11:00:00');    -- Reserva 3
+(2, 1, 80.00, 'confirmada', '2025-11-20 10:00:00'), -- Reserva 1
+(3, 2, 150.00, 'pendiente_pago', '2025-11-20 10:00:00'),       -- Reserva 2
+(2, 1, 95.00, 'cancelado', '2025-11-21 11:00:00');    -- Reserva 3
 
 -- ================================
 -- RESERVA DETALLE
