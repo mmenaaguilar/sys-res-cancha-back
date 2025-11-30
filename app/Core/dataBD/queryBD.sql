@@ -226,15 +226,16 @@ CREATE TABLE ComplejoDeportivoFavoritos (
     FOREIGN KEY (complejo_id) REFERENCES ComplejoDeportivo(complejo_id) ON DELETE CASCADE
 );
 
-
 CREATE TABLE PoliticaCancelacion (
     politica_id INT AUTO_INCREMENT PRIMARY KEY,
     complejo_id INT NOT NULL,
     horas_limite INT NOT NULL,
-    estrategia_temprana ENUM('CreditoCompleto','ReembolsoFisico') NOT NULL UNIQUE,
+    estrategia_temprana ENUM('CreditoCompleto','ReembolsoFisico') NOT NULL,
     estado ENUM('activo', 'inactivo') DEFAULT 'activo',
-    FOREIGN KEY (complejo_id) REFERENCES ComplejoDeportivo(complejo_id) ON DELETE CASCADE
+    FOREIGN KEY (complejo_id) REFERENCES ComplejoDeportivo(complejo_id) ON DELETE CASCADE,
+    UNIQUE (complejo_id, estrategia_temprana)
 );
+
 
 CREATE TABLE CreditoUsuario (
     credito_id INT AUTO_INCREMENT PRIMARY KEY,
