@@ -1,6 +1,6 @@
 <?php
 
-namespace Core\Helpers;
+namespace App\Core;
 
 /**
  * Clase para cargar variables de entorno desde un archivo .env o desde variables del sistema (como Render).
