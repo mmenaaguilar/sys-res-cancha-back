@@ -1,13 +1,9 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-# 1. Iniciar PHP-FPM en segundo plano.
-# Usamos el binario específico 'php-fpm82' para garantizar que se ejecute la versión 8.2 instalada 
-# en la imagen Alpine (se ejecuta en background con -D).
-echo "Iniciando gestor de procesos PHP-FPM (php-fpm82) en puerto 9000..."
-php-fpm82 -D
+# 1. Instalar dependencias de Composer y generar el autoload.php
+# El --optimize-autoloader es CRÍTICO para arreglar el Class Not Found.
+composer install --no-dev --optimize-autoloader
 
-# 2. Iniciar NGINX en primer plano (foreground).
-# Nginx escuchará en el puerto 80, y el comando 'exec' asegura que el contenedor 
-# permanezca vivo, resolviendo el error de 'Port scan timeout'.
-echo "Iniciando servidor web NGINX en puerto 80..."
-exec nginx -g "daemon off;"
+# 2. Iniciar el servidor web Nginx/PHP-FPM
+# Ejecuta el proceso de inicio de FPM en primer plano
+/usr/sbin/php-fpm7.4 -F
