@@ -53,15 +53,16 @@ class ComplejoDeportivoRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getAll(?int $usuarioId, ?string $searchTerm, int $limit, int $offset): array
+      public function getAll(?int $usuarioId, ?string $searchTerm, int $limit, int $offset): array
     {
-        // Usamos DISTINCT para evitar duplicados si el usuario tuviera varios roles
+        // 1. Agregamos 'ur.rol_id AS mi_rol' al SELECT
         $sql = "SELECT DISTINCT 
-                       c.*, 
-                       d.nombre AS distrito_nombre, 
-                       p.nombre AS provincia_nombre,
-                       dep.nombre AS departamento_nombre,
-                       CONCAT(IFNULL(d.nombre,''), ', ', IFNULL(p.nombre,'')) AS ubicacion_completa
+                        c.*, 
+                        d.nombre AS distrito_nombre, 
+                        p.nombre AS provincia_nombre,
+                        dep.nombre AS departamento_nombre,
+                        CONCAT(IFNULL(d.nombre,''), ', ', IFNULL(p.nombre,'')) AS ubicacion_completa,
+                        ur.rol_id AS mi_rol  /* <--- ESTO ES CRÍTICO PARA LA SEGURIDAD FRONTEND */
                 FROM ComplejoDeportivo c
                 LEFT JOIN Distrito d ON c.distrito_id = d.distrito_id
                 LEFT JOIN Provincia p ON c.provincia_id = p.provincia_id
@@ -81,10 +82,8 @@ class ComplejoDeportivoRepository
             $params[':searchTerm'] = "%" . $searchTerm . "%";
         }
 
-        // ⚠️ CORRECCIÓN: Quitamos GROUP BY y ordenamos directo
         $sql .= " ORDER BY c.complejo_id DESC LIMIT :limit OFFSET :offset";
 
-        // Ejecutar Datos
         $stmt = $this->db->prepare($sql);
         foreach ($params as $key => $value) {
             $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
@@ -94,12 +93,11 @@ class ComplejoDeportivoRepository
         $stmt->execute();
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Ejecutar Total
+        // Conteo total (sin cambios)
         $countSql = "SELECT COUNT(DISTINCT c.complejo_id) as total 
                      FROM ComplejoDeportivo c 
                      LEFT JOIN UsuarioRol ur ON c.complejo_id = ur.complejo_id 
                      WHERE 1=1";
-                     
         if ($usuarioId !== null) $countSql .= " AND ur.usuario_id = :usuarioId AND ur.estado = 'activo'";
         if (!empty($searchTerm)) $countSql .= " AND (c.nombre LIKE :searchTerm OR c.direccion_detalle LIKE :searchTerm)";
 

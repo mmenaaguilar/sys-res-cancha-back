@@ -58,6 +58,7 @@ $router->post('/api/horario-base/clone', 'HorarioBaseController@cloneByDia');
 $router->post('/api/usuarios/list', 'UsuarioController@getUsuariosPaginated');
 $router->put('/api/usuarios/{id}', 'UsuarioController@update');
 $router->post('/api/usuarios/creditos', 'UsuarioController@getCreditos');
+$router->post('/api/usuarios/cambiar-contrasena', 'UsuarioController@cambiarContrasena');
 
 // RUTA PARA VALIDAR DISPONIBILIDAD
 $router->post('/api/alquiler/validar-disponibilidad', 'AlquilerController@validarDisponibilidad');
