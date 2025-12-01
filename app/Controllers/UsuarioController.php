@@ -37,6 +37,8 @@ namespace App\Controllers;
             }
         }
 
+        
+
 
         /**
          * Endpoint para editar un usuario existente.
@@ -77,4 +79,28 @@ namespace App\Controllers;
                 $this->sendError($e, 400);
             }
         }
+
+        public function cambiarContrasena()
+        {
+            $data = $this->initRequest('POST');
+            if ($data === null) return;
+
+            try {
+                $usuarioId = intval($data['usuario_id'] ?? 0);
+                if ($usuarioId <= 0) {
+                    throw new Exception("Usuario no autenticado.", 401);
+                }
+
+                $contrasenaActual = $data['contrasena_actual'] ?? '';
+                $nuevaContrasena = $data['nueva_contrasena'] ?? '';
+
+                $this->usuarioService->cambiarContrasena($usuarioId, $contrasenaActual, $nuevaContrasena);
+                
+                $this->sendResponse(['mensaje' => 'Contraseña actualizada correctamente.']);
+            } catch (Exception $e) {
+                $code = ($e->getCode() === 409 || $e->getCode() === 404 || $e->getCode() === 401) ? $e->getCode() : 400;
+                $this->sendError($e, $code);
+            }
+        }
+                
     }

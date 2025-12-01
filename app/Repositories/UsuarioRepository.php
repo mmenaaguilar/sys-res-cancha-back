@@ -97,4 +97,39 @@ class UsuarioRepository
             throw $e;
         }
     }
+
+    public function getContrasenaHash(int $usuarioId): ?string
+    {
+        $sql = "SELECT contrasena FROM Usuarios WHERE usuario_id = :usuario_id"; // ✅ contrasena
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':usuario_id', $usuarioId, PDO::PARAM_INT);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ? $result['contrasena'] : null; // ✅ contrasena
+    }
+
+    /**
+     * Actualiza la contraseña de un usuario.
+     */
+    public function actualizarContrasena(int $usuarioId, string $nuevoHash): bool
+    {
+        error_log("REPOSITORY - actualizarContrasena llamado");
+        error_log("REPOSITORY - usuarioId: " . $usuarioId);
+        error_log("REPOSITORY - nuevoHash: " . $nuevoHash);
+        
+        $sql = "UPDATE Usuarios SET contrasena = :contrasena WHERE usuario_id = :usuario_id";
+        $stmt = $this->db->prepare($sql);
+        
+        $resultado = $stmt->execute([
+            ':contrasena' => $nuevoHash,
+            ':usuario_id' => $usuarioId
+        ]);
+        
+        error_log("REPOSITORY - execute resultado: " . ($resultado ? 'true' : 'false'));
+        error_log("REPOSITORY - rowCount: " . $stmt->rowCount());
+        
+        return $resultado && $stmt->rowCount() > 0;
+    }
+
+    
 }

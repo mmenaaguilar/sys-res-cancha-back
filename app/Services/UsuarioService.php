@@ -100,4 +100,56 @@ class UsuarioService
 
         return $this->creditoRepo->getCreditosByUsuario($usuarioId);
     }
+
+public function cambiarContrasena(int $usuarioId, string $contrasenaActual, string $nuevaContrasena): void
+{
+    error_log("SERVICE - cambiarContrasena llamado con usuarioId: " . $usuarioId);
+    if ($usuarioId <= 0) {
+        throw new Exception("ID de usuario inválido.", 400);
+    }
+
+    if (!$this->usuarioRepository->getById($usuarioId)) {
+        throw new Exception("Usuario no encontrado.", 404);
+    }
+
+    if (empty($contrasenaActual)) {
+        throw new Exception("La contraseña actual es requerida.", 400);
+    }
+
+    if (empty($nuevaContrasena) || strlen($nuevaContrasena) < 8) {
+        throw new Exception("La nueva contraseña debe tener al menos 8 caracteres.", 400);
+    }
+
+    // Obtener el hash ACTUAL de la base de datos
+    $hashActual = $this->usuarioRepository->getContrasenaHash($usuarioId);
+    if ($hashActual === null) {
+        throw new Exception("No se pudo obtener la contraseña actual.", 500);
+    }
+
+    error_log("DEBUG - Contraseña actual proporcionada: " . ($contrasenaActual ? 'SÍ' : 'NO'));
+    error_log("DEBUG - Hash actual en BD: " . $hashActual);
+    error_log("DEBUG - password_verify resultado: " . (password_verify($contrasenaActual, $hashActual) ? 'VERDADERO' : 'FALSO'));
+
+    // Verificar la contraseña actual
+    if (!password_verify($contrasenaActual, $hashActual)) {
+        throw new Exception("La contraseña actual es incorrecta.", 400);
+    }
+
+    // Verificar que sea diferente
+    if (password_verify($nuevaContrasena, $hashActual)) {
+        throw new Exception("La nueva contraseña debe ser diferente a la actual.", 400);
+    }
+
+    // Hashear y actualizar
+    $nuevoHash = password_hash($nuevaContrasena, PASSWORD_DEFAULT);
+    error_log("DEBUG - Nuevo hash generado: " . $nuevoHash);
+    
+    $actualizado = $this->usuarioRepository->actualizarContrasena($usuarioId, $nuevoHash);
+    
+    if (!$actualizado) {
+        throw new Exception("Error al actualizar la contraseña.", 500);
+    }
+    
+    error_log("DEBUG - Contraseña actualizada exitosamente para usuario: " . $usuarioId);
+}
 }
