@@ -1,64 +1,70 @@
 # --------------------------------------------------------------------------------
-# ETAPA 1: Construcción (PHP con dependencias)
+# Solución Final: Usar Nginx como base e instalar PHP y dependencias.
+# Esto asegura que Nginx esté configurado por defecto para escuchar en el puerto 80.
 # --------------------------------------------------------------------------------
-# Usar la imagen base de PHP 8.2 con FPM (FastCGI Process Manager)
-FROM php:8.2-fpm-alpine AS builder
 
-# 1. Instalar dependencias del sistema y extensiones de PHP.
+# Usar una imagen base de Nginx + Alpine (muy ligera y estable)
+FROM nginx:1.25-alpine
+
+# 1. Instalar las dependencias necesarias de PHP y otras herramientas.
+# Incluye paquetes para PHP, PHP-FPM, Composer, y extensiones de MySQL.
 RUN apk add --no-cache \
+    php82 \
+    php82-fpm \
+    php82-mysqli \
+    php82-pdo \
+    php82-pdo_mysql \
+    php82-json \
+    php82-curl \
+    php82-mbstring \
+    php82-xml \
+    php82-tokenizer \
+    php82-fileinfo \
+    php82-dom \
+    composer \
     git \
-    mysql-client \
-    # Instalar la extensión de MySQL para PHP
-    && docker-php-ext-install pdo_mysql
+    mysql-client
 
-# 2. Instalar Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# 3. Establecer el directorio de trabajo y copiar archivos.
+# 2. Configurar el directorio de trabajo
 WORKDIR /var/www/html
-COPY . .
 
-# 4. Instalar dependencias de PHP usando Composer.
-RUN composer install --no-dev --optimize-autoloader
+# 3. Eliminar la configuración predeterminada de Nginx
+RUN rm /etc/nginx/conf.d/default.conf
 
-# --------------------------------------------------------------------------------
-# ETAPA 2: Producción (PHP-FPM + NGINX)
-# --------------------------------------------------------------------------------
-# Usamos una imagen base más completa que incluye Nginx
-FROM wodby/nginx:1.24-alpine-3.18-5.3
-
-# 1. Copiar el código de la aplicación (incluyendo /vendor y /public)
-# El directorio de trabajo ya está configurado en /var/www/html en esta imagen base
-WORKDIR /var/www/html
-COPY --from=builder /var/www/html .
-
-# 2. Copiar los archivos de configuración de PHP-FPM
-# Necesitamos que la imagen de Nginx sepa dónde está PHP-FPM (que está dentro del mismo contenedor)
-# Esta imagen de Wodby ya trae un PHP-FPM que podemos usar.
-
-# 3. Configuración CRÍTICA de Nginx:
-# Creamos la configuración para que Nginx sepa que la raíz es /public
+# 4. Configuración CRÍTICA de Nginx para el proyecto (public/index.php)
+# Nginx escuchará en el puerto 80 y pasará las peticiones PHP a PHP-FPM (127.0.0.1:9000).
 RUN echo "server { \
     listen 80; \
     root /var/www/html/public; \
     index index.php index.html; \
+    \
     location / { \
         try_files \$uri \$uri/ /index.php?\$query_string; \
     } \
+    \
     location ~ \.php$ { \
         try_files \$uri /index.php =404; \
         fastcgi_split_path_info ^(.+\.php)(/.+)$; \
-        # El FPM ahora lo ejecutaremos en segundo plano dentro del mismo contenedor, en el puerto 9000
+        # PHP-FPM se ejecuta en el puerto 9000 localmente en este mismo contenedor
         fastcgi_pass 127.0.0.1:9000; \
         fastcgi_index index.php; \
         include fastcgi_params; \
         fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name; \
         fastcgi_param PATH_INFO \$fastcgi_path_info; \
     } \
-}" > /etc/nginx/conf.d/default.conf
+}" > /etc/nginx/conf.d/app.conf
 
-# 4. Exponer el puerto que Nginx está escuchando (Render lo necesita)
+# 5. Copiar los archivos de tu repositorio al contenedor
+COPY . .
+
+# 6. Instalar dependencias de PHP usando Composer.
+RUN composer install --no-dev --optimize-autoloader
+
+# 7. Asegurar que el script de inicio tenga permisos de ejecución
+RUN chmod +x start.sh
+
+# 8. Exponer el puerto 80 (Nginx) para Render
 EXPOSE 80
 
-# 5. El punto de entrada será el script 'start.sh'
-ENTRYPOINT ["/bin/sh", "./start.sh"]
+# 9. Definir el comando de inicio que ejecuta el script 'start.sh'
+CMD ["/bin/sh", "./start.sh"]
