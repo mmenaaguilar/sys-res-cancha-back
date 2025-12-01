@@ -154,4 +154,17 @@ class ContactoRepository
 
         return $stmt->execute();
     }
+
+        public function getActiveByComplejoId(int $complejoId): array
+    {
+        $sql = "SELECT tipo, valor_contacto 
+                FROM Contactos 
+                WHERE complejo_id = :id AND estado = 'activo'";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':id', $complejoId, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

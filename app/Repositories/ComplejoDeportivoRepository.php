@@ -18,12 +18,23 @@ class ComplejoDeportivoRepository
 
     public function getById(int $id): ?array
     {
-        $sql = "SELECT * FROM ComplejoDeportivo WHERE complejo_id = :id";
+        $sql = "SELECT 
+                    cd.*,
+                    d.nombre AS distrito_nombre,
+                    p.nombre AS provincia_nombre,
+                    dep.nombre AS departamento_nombre,
+                    CONCAT(cd.direccion_detalle, ', ', d.nombre, ', ', p.nombre) AS direccion_completa
+                FROM ComplejoDeportivo cd
+                LEFT JOIN Distrito d ON cd.distrito_id = d.distrito_id
+                LEFT JOIN Provincia p ON cd.provincia_id = p.provincia_id
+                LEFT JOIN Departamento dep ON cd.departamento_id = dep.departamento_id
+                WHERE cd.complejo_id = :id";
+
         $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->bindParam(':id', $id, \PDO::PARAM_INT);
         $stmt->execute();
 
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $result ?: null;
     }
     
@@ -221,5 +232,18 @@ class ComplejoDeportivoRepository
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
 
         return $stmt->execute();
+    }
+
+    public function getDistritosConComplejos(): array
+    {
+        $sql = "SELECT DISTINCT d.distrito_id, d.nombre 
+                FROM ComplejoDeportivo c
+                INNER JOIN Distrito d ON c.distrito_id = d.distrito_id
+                WHERE c.estado = 'activo'
+                ORDER BY d.nombre ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

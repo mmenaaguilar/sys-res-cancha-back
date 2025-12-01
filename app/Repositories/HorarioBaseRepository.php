@@ -226,6 +226,11 @@ class HorarioBaseRepository
             ':dia_semana' => $diaSemana
         ]);
 
+        if (!empty($horaFiltro)) {
+            $sql .= " AND hora_inicio <= :hora AND hora_fin > :hora";
+            $params[':hora'] = $horaFiltro;
+        }
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

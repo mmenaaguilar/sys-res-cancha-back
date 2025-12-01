@@ -15,6 +15,17 @@ class ComplejoDeportivoController extends ApiHelper
         $this->service = new ComplejoDeportivoService();
     }
 
+    public function show(int $id)
+    {
+        try {
+            // Reutiliza el servicio getById que ya tienes
+            $complejo = $this->service->getById($id);
+            $this->sendResponse($complejo);
+        } catch (Exception $e) {
+            $this->sendError($e);
+        }
+    }
+
     public function getComplejo()
     {
         try {
@@ -108,6 +119,16 @@ class ComplejoDeportivoController extends ApiHelper
         try {
             $this->service->delete($id);
             $this->sendResponse(['complejo_id' => $id, 'mensaje' => 'Eliminado correctamente']);
+        } catch (Exception $e) {
+            $this->sendError($e);
+        }
+    }
+
+    public function getUbicaciones()
+    {
+        try {
+            $data = $this->service->getUbicacionesDisponibles();
+            $this->sendResponse($data);
         } catch (Exception $e) {
             $this->sendError($e);
         }

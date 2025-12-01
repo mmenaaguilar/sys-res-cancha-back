@@ -198,4 +198,69 @@ class AlquilerFacade
             'data' => $respuesta
         ];
     }
+
+    public function obtenerGrillaAgenda(int $canchaId, string $fecha): array
+    {
+        // 1. Obtener día de la semana
+        $dias = [0 => 'Domingo', 1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado'];
+        $diaSemana = $dias[date('w', strtotime($fecha))];
+
+        // 2. Obtener Horario Base (Apertura/Cierre)
+        // Usamos el repositorio existente. Si no hay horario, asumimos cerrado.
+        $horariosBase = $this->horarioRepo->getHorariosByCanchaAndDia($canchaId, $diaSemana, '');
+
+        // 3. Obtener Reservas Existentes del día (Ocupado)
+        // Hacemos una consulta directa para asegurar eficiencia
+        $db = \App\Core\Database::getConnection();
+        $sql = "SELECT hora_inicio, hora_fin FROM Reserva 
+                WHERE cancha_id = :cid 
+                  AND fecha_reserva = :fecha 
+                  AND estado IN ('confirmada', 'pendiente', 'pagada')"; // Ajusta estados según tu lógica
+        $stmt = $db->prepare($sql);
+        $stmt->execute([':cid' => $canchaId, ':fecha' => $fecha]);
+        $reservas = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // 4. Construir Grilla (de 06:00 a 24:00)
+        $grilla = [];
+        $startHour = 6;
+        $endHour = 24;
+
+        for ($h = $startHour; $h < $endHour; $h++) {
+            $horaStr = sprintf("%02d:00:00", $h);
+            $horaFinStr = sprintf("%02d:00:00", $h + 1);
+            
+            $estado = 'closed'; // Por defecto cerrado
+            $precio = 0;
+
+            // A. Verificar si está dentro del horario base (Abierto)
+            foreach ($horariosBase as $base) {
+                if ($horaStr >= $base['hora_inicio'] && $horaFinStr <= $base['hora_fin']) {
+                    $estado = 'available';
+                    $precio = (float)$base['monto'];
+                    break;
+                }
+            }
+
+            // B. Verificar si hay conflicto con reservas (Ocupado)
+            if ($estado === 'available') {
+                foreach ($reservas as $res) {
+                    // Si la hora se solapa con una reserva
+                    // Lógica de solapamiento: (StartA < EndB) && (EndA > StartB)
+                    if ($horaStr < $res['hora_fin'] && $horaFinStr > $res['hora_inicio']) {
+                        $estado = 'booked';
+                        break;
+                    }
+                }
+            }
+
+            $grilla[] = [
+                'hora' => sprintf("%02d:00", $h),
+                'hora_fin' => sprintf("%02d:00", $h + 1),
+                'estado' => $estado, // available, booked, closed
+                'precio' => $precio
+            ];
+        }
+
+        return $grilla;
+    }
 }

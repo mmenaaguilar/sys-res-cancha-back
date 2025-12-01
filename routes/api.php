@@ -109,3 +109,9 @@ $router->post('/api/gestores/list', 'UsuarioRolController@list');
 $router->post('/api/gestores/invite', 'UsuarioRolController@invite');
 $router->delete('/api/gestores/{id}', 'UsuarioRolController@delete');
 
+
+$router->get('/api/complejos/ubicaciones-activas', 'ComplejoDeportivoController@getUbicaciones');
+
+$router->get('/api/complejo-publico/{id}', 'ComplejoDeportivoController@show');
+
+$router->post('/api/alquiler/agenda', 'AlquilerController@verAgenda');
