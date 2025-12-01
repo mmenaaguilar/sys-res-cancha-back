@@ -1,6 +1,6 @@
 # Usar la imagen base de PHP con FPM (FastCGI Process Manager)
-# Usamos 'alpine' para que la imagen sea ligera y eficiente.
-FROM php:8.1-fpm-alpine
+# CAMBIO CRÍTICO: Se actualiza a PHP 8.2 para cumplir con el requisito de composer.json
+FROM php:8.2-fpm-alpine
 
 # 1. Instalar dependencias del sistema y extensiones de PHP.
 # git es necesario para Composer.
@@ -17,21 +17,13 @@ RUN apk add --no-cache \
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # 3. Establecer el directorio de trabajo dentro del contenedor.
-# Aquí es donde se copiará tu código y se ejecutarán los comandos.
 WORKDIR /var/www/html
 
 # 4. Copiar los archivos de tu repositorio al contenedor.
-# El primer '.' es la carpeta de origen (todo tu proyecto); el segundo '.' es la carpeta de destino (/var/www/html).
 COPY . .
 
 # 5. Instalar dependencias de PHP usando Composer.
-# --no-dev: Omite dependencias de desarrollo para producción.
-# --optimize-autoloader: Mejora la velocidad de carga de clases.
 RUN composer install --no-dev --optimize-autoloader
 
 # 6. Exponer el puerto por defecto de PHP-FPM
-# Este puerto es el que escucha Nginx o el servidor web.
 EXPOSE 9000
-
-# NOTA: El comando de inicio (ENTRYPOINT/CMD) está especificado en Render como 'start.sh', 
-# por lo que no es necesario definir CMD aquí.
