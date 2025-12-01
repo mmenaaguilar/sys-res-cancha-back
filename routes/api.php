@@ -1,7 +1,6 @@
 <?php
 // routes/api.php
 
-
 $router->post('/api/register', 'AuthController@register');
 $router->post('/api/login', 'AuthController@login');
 
