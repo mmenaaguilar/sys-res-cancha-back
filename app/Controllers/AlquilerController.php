@@ -54,7 +54,7 @@ class AlquilerController extends ApiHelper
         }
 
         try {
-            $grilla = $this->facade->obtenerGrillaAgenda($canchaId, $fecha);
+            $grilla = $this->facade->obtenerGrillaPorCancha($canchaId, $fecha);
             
             // Enviamos info extra de la cancha también para el header
             // (Opcional si ya la tienes, pero útil)

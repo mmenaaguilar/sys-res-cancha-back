@@ -264,4 +264,83 @@ public function obtenerGrillaAgenda(int $canchaId, string $fecha): array
 
         return $grilla;
     }
+    /**
+     * Genera una grilla horaria para una cancha específica, utilizando los rangos 
+     * de tiempo exactos definidos en los horarios base (ej. 18:00:00 a 19:30:00).
+     * Aplica las lógicas de validación (Composite) y cálculo de monto (Strategy).
+     * * @param int $canchaId ID de la cancha.
+     * @param string $fecha Fecha (YYYY-MM-DD).
+     * @return array
+     */
+    public function obtenerGrillaPorCancha(int $canchaId, string $fecha): array
+    {
+        // 1. Validar parámetros requeridos
+        if (!$canchaId || !$fecha) {
+            return [
+                'success' => false,
+                'message' => 'canchaId y fecha son requeridos.'
+            ];
+        }
+
+        // 2. Determinar el día de la semana
+        $dias = [
+            0 => 'Domingo',
+            1 => 'Lunes',
+            2 => 'Martes',
+            3 => 'Miércoles',
+            4 => 'Jueves',
+            5 => 'Viernes',
+            6 => 'Sábado'
+        ];
+        $diaSemana = $dias[date('w', strtotime($fecha))];
+
+        // 3. Obtener TODOS los Horarios de Apertura (Base) para la cancha y día
+        // El 3er parámetro '' asegura que se obtengan todos los rangos del día.
+        $horariosBase = $this->horarioRepo->getHorariosByCanchaAndDia(
+            $canchaId,
+            $diaSemana,
+            ''
+        );
+
+        $listaHorarios = [];
+
+        // 4. Iterar sobre cada Horario Base, que se convierte en un slot de la grilla
+        foreach ($horariosBase as $hb) {
+
+            // Unificar formato de hora para el cálculo (H:i:s)
+            $horaInicio = date('H:i:s', strtotime($hb['hora_inicio']));
+            $horaFin    = date('H:i:s', strtotime($hb['hora_fin']));
+
+            // 4.1 Validar disponibilidad con Composite
+            $disponible = $this->composite->validarDisponibilidad(
+                $canchaId,
+                $fecha,
+                $horaInicio,
+                $horaFin
+            );
+
+            // 4.2 Obtener monto usando Strategy
+            $montoFinal = $this->precioContext->calcularMonto(
+                $canchaId,
+                $fecha,
+                $horaInicio,
+                $horaFin
+            );
+
+            // 4.3 Determinar el estado del slot
+            // 'available' si está disponible, 'booked' u 'occupied' si está ocupado
+            $estado = $disponible ? 'available' : 'booked';
+
+            // 4.4 Agregar el slot a la lista
+            $listaHorarios[] = [
+                'hora'     => $horaInicio, // Ej: "18:00:00"
+                'hora_fin'        => $horaFin,    // Ej: "19:30:00"
+                'precio'           => round($montoFinal, 2),
+                'estado'     => $estado // Campo adicional para el frontend
+            ];
+        }
+
+        // 5. Devolver la respuesta final
+        return $listaHorarios;
+    }
 }
