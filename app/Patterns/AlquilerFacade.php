@@ -127,9 +127,9 @@ class AlquilerFacade
      public function buscarComplejosDisponiblesPorDistrito(array $data): array
     {
         // 1. Recibimos los 3 niveles de ubicación
-        $depId  = intval($data['departamento_id'] ?? -1);
-        $provId = intval($data['provincia_id'] ?? -1);
-        $distId = intval($data['distrito_id'] ?? -1);
+        $depId  = intval($data['departamento_id'] ?? 0);
+        $provId = intval($data['provincia_id'] ?? 0);
+        $distId = intval($data['distrito_id'] ?? 0);
         
         $fecha         = trim($data['fecha'] ?? '');
         $horaFiltro    = trim($data['hora'] ?? '');
