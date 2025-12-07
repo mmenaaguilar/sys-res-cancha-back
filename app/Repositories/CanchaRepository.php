@@ -52,7 +52,7 @@ class CanchaRepository
         $params = [':id' => $complejoId];
 
         // Filtro por tipo de deporte si se recibe
-        if ($tipoDeporteId !== null && $tipoDeporteId > 0) {
+        if ($tipoDeporteId !== null && $tipoDeporteId > -1) {
             $sql .= " AND c.tipo_deporte_id = :tipoDeporteId";
             $params[':tipoDeporteId'] = $tipoDeporteId;
         }

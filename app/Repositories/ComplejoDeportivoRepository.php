@@ -59,13 +59,13 @@ class ComplejoDeportivoRepository
         $params = [];
 
         // Lógica de cascada: Filtramos por el nivel más específico disponible
-        if ($distId > 0) {
+        if ($distId > -1) {
             $sql .= " AND cd.distrito_id = :dist";
             $params[':dist'] = $distId;
-        } elseif ($provId > 0) {
+        } elseif ($provId > -1) {
             $sql .= " AND cd.provincia_id = :prov";
             $params[':prov'] = $provId;
-        } elseif ($depId > 0) {
+        } elseif ($depId > -1) {
             $sql .= " AND cd.departamento_id = :dep";
             $params[':dep'] = $depId;
         }
