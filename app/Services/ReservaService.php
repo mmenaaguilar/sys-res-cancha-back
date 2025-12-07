@@ -7,17 +7,21 @@ use App\Repositories\PoliticaRepository;
 use App\Patterns\Strategies\cancelacionStrategy\CancelacionContext;
 use App\Patterns\Strategies\cancelacionStrategy\CancelacionCreditoCompleto;
 use App\Patterns\Strategies\cancelacionStrategy\CancelacionReembolsoFisico;
+use App\Core\Database;
 use Exception;
+use PDO;
 
 class ReservaService
 {
     private ReservaRepository $reservaRepo;
     private PoliticaRepository $politicaRepo;
+    private PDO $db;
 
     public function __construct()
     {
         $this->reservaRepo = new ReservaRepository();
         $this->politicaRepo = new PoliticaRepository();
+        $this->db = Database::getConnection();
     }
     private function formatPaginationResponse(array $result, int $page, int $limit): array
     {
@@ -140,34 +144,89 @@ class ReservaService
         ];
     }
     
-    public function crearReserva(array $data): array
+     public function crearReserva(array $data): array
     {
-        // Validación básica
-        if (!isset($data['usuario_id']) || !isset($data['metodo_pago_id']) || !isset($data['detalles'])) {
-            throw new Exception("Datos incompletos para crear reserva.");
+        if (empty($data['usuario_id']) || empty($data['metodo_pago_id']) || empty($data['detalles'])) {
+            throw new Exception("Datos incompletos para crear reserva.", 400);
         }
 
-        // Calcular total
+        // 1. Calcular Total y Preparar Datos
         $total = 0;
         foreach ($data['detalles'] as $d) {
             $total += $d['precio'];
         }
 
-        // Crear reserva (CABEZA)
-        $reservaId = $this->reservaRepo->createReserva([
-            'usuario_id'     => $data['usuario_id'],
-            'metodo_pago_id' => $data['metodo_pago_id'],
-            'total_pago'     => $total,
-            'estado'         => 'confirmada']);
+        // ✅ 2. LÓGICA DE AGRUPACIÓN (MERGE) DE HORARIOS CONSECUTIVOS
+        $detallesOriginales = $data['detalles'];
+        
+        // A. Ordenar por hora de inicio para asegurar continuidad
+        usort($detallesOriginales, function($a, $b) {
+            return strcmp($a['hora_inicio'], $b['hora_inicio']);
+        });
 
-        // Crear DETALLES
-        foreach ($data['detalles'] as $d) {
-            $this->reservaRepo->addDetalle($reservaId, $d);
+        $detallesAgrupados = [];
+        
+        foreach ($detallesOriginales as $slot) {
+            // Si la lista está vacía, agregamos el primero
+            if (empty($detallesAgrupados)) {
+                $detallesAgrupados[] = $slot;
+                continue;
+            }
+
+            // Obtenemos el último elemento insertado (por referencia para modificarlo)
+            $ultimoIndex = count($detallesAgrupados) - 1;
+            $ultimoSlot = &$detallesAgrupados[$ultimoIndex];
+
+            // B. Verificar continuidad: ¿El anterior termina donde empieza el actual?
+            // Ejemplo: Anterior Fin 10:00:00 == Actual Inicio 10:00:00
+            if ($ultimoSlot['hora_fin'] === $slot['hora_inicio']) {
+                // ¡Son consecutivos! Fusionamos.
+                $ultimoSlot['hora_fin'] = $slot['hora_fin']; // Extendemos el fin
+                $ultimoSlot['precio'] += $slot['precio'];   // Sumamos el precio
+            } else {
+                // No son consecutivos (hay hueco), agregamos como nuevo bloque
+                $detallesAgrupados[] = $slot;
+            }
         }
+        // ---------------------------------------------------------
 
-        return [
-            'reserva_id' => $reservaId,
-            'total'      => $total
-        ];
+        try {
+            $this->db->beginTransaction();
+
+            // 3. Crear Cabecera
+            // ✅ CAMBIO: Estado siempre 'pendiente_pago' y pasamos fecha_pago
+            $reservaId = $this->reservaRepo->createReserva([
+                'usuario_id'     => $data['usuario_id'],
+                'metodo_pago_id' => $data['metodo_pago_id'],
+                'total_pago'     => $total,
+                'estado'         => 'pendiente_pago', // El usuario pidió esto explícitamente
+                'fecha_pago'     => date('Y-m-d H:i:s') // Guardamos el momento del intento de pago
+            ]);
+
+            // 4. Crear Detalles (Usando la lista AGRUPADA)
+            foreach ($detallesAgrupados as $d) {
+                $this->reservaRepo->addDetalle($reservaId, [
+                    'cancha_id'   => $data['cancha_id'],
+                    'fecha'       => $data['fecha_reserva'],
+                    'hora_inicio' => $d['hora_inicio'],
+                    'hora_fin'    => $d['hora_fin'],
+                    'precio'      => $d['precio']
+                ]);
+            }
+
+            $this->db->commit();
+
+            return [
+                'reserva_id' => $reservaId,
+                'total'      => $total,
+                'mensaje'    => 'Reserva creada (Pendiente de verificación).'
+            ];
+
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
     }
 }

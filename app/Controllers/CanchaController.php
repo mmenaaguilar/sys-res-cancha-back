@@ -1,17 +1,20 @@
 <?php
 namespace App\Controllers;
-
-use App\Services\CanchaService; // Asegúrate que tu Service use el nuevo Repo
+use App\Services\CanchaService;
+use App\Repositories\CanchaRepository;
+use App\Core\Helpers\ApiHelper;
 use Exception;
 
-class CanchaController
+class CanchaController extends ApiHelper
 {
     private $canchaService;
+    private CanchaRepository $repository;
 
     public function __construct()
     {
         // Asumimos que CanchaService ya instancia CanchaRepository
         $this->canchaService = new CanchaService();
+        $this->repository = new CanchaRepository();
     }
 
     // Helper para CORS y JSON
@@ -116,6 +119,22 @@ class CanchaController
             $this->jsonResponse(['message' => 'Eliminado']);
         } catch (Exception $e) {
             $this->jsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function show(int $id)
+    {
+        try {
+            $cancha = $this->repository->getByIdWithDetails($id);
+            
+            if (!$cancha) {
+                $this->sendError("Cancha no encontrada", 404);
+                return;
+            }
+
+            $this->sendResponse($cancha);
+        } catch (Exception $e) {
+            $this->sendError($e);
         }
     }
 }

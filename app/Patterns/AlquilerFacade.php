@@ -10,6 +10,8 @@ use App\Patterns\Composity\ComposityDisponibilidadHorario\HorarioBaseComposite;
 use App\Patterns\Composity\ComposityDisponibilidadHorario\ReservaLeaf;
 use App\Patterns\Composity\ComposityDisponibilidadHorario\HorarioEspecialLeaf;
 use App\Patterns\Strategies\precioStrategy\PrecioContext;
+use App\Core\Database;
+use PDO;
 
 class AlquilerFacade
 {
@@ -122,61 +124,49 @@ class AlquilerFacade
             'data' => $respuesta
         ];
     }
-    public function buscarComplejosDisponiblesPorDistrito(array $data): array
+     public function buscarComplejosDisponiblesPorDistrito(array $data): array
     {
-        $distritoId    = intval($data['distrito_id'] ?? 0);
+        // 1. Recibimos los 3 niveles de ubicación
+        $depId  = intval($data['departamento_id'] ?? 0);
+        $provId = intval($data['provincia_id'] ?? 0);
+        $distId = intval($data['distrito_id'] ?? 0);
+        
         $fecha         = trim($data['fecha'] ?? '');
         $horaFiltro    = trim($data['hora'] ?? '');
         $tipoDeporteId = intval($data['tipoDeporte_id'] ?? -1);
 
-        if (!$distritoId || !$fecha) {
-            return [
-                'success' => false,
-                'message' => 'distrito_id y fecha son requeridos.'
-            ];
+        // Validación: Al menos una fecha y un nivel de ubicación (departamento mínimo)
+        if (!$fecha) {
+            return ['success' => false, 'message' => 'La fecha es requerida.'];
         }
+        
+        /*
+        if ($depId === 0 && $provId === 0 && $distId === 0) {
+             return ['success' => false, 'message' => 'Seleccione al menos un Departamento.'];
+        }
+        */
 
-        // Día de la semana
-        $dias = [
-            0 => 'Domingo',
-            1 => 'Lunes',
-            2 => 'Martes',
-            3 => 'Miércoles',
-            4 => 'Jueves',
-            5 => 'Viernes',
-            6 => 'Sábado'
-        ];
+        $dias = [0 => 'Domingo', 1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado'];
         $diaSemana = $dias[date('w', strtotime($fecha))];
 
-        // Obtener complejos activos en el distrito
-        $complejos = $this->complejoRepo->getComplejosByDistrito($distritoId);
-
+        // ✅ LLAMADA AL NUEVO MÉTODO DEL REPO
+        $complejos = $this->complejoRepo->getComplejosByUbicacion($depId, $provId, $distId);
+        
         $respuesta = [];
 
         foreach ($complejos as $complejo) {
-            // Canchas del complejo filtradas por tipo de deporte
             $canchas = $this->canchaRepo->getByComplejo($complejo['complejo_id'], $tipoDeporteId);
             $complejoDisponible = false;
 
             foreach ($canchas as $cancha) {
-                $horarios = $this->horarioRepo->getHorariosByCanchaAndDia(
-                    $cancha['cancha_id'],
-                    $diaSemana,
-                    $horaFiltro
-                );
-
+                // ... (Lógica de verificación de horarios igual que antes) ...
+                $horarios = $this->horarioRepo->getHorariosByCanchaAndDia($cancha['cancha_id'], $diaSemana, $horaFiltro);
                 foreach ($horarios as $hb) {
                     $horaInicio = date('H:i:s', strtotime($hb['hora_inicio']));
                     $horaFin = date('H:i:s', strtotime($hb['hora_fin']));
-
-                    if ($this->composite->validarDisponibilidad(
-                        $cancha['cancha_id'],
-                        $fecha,
-                        $horaInicio,
-                        $horaFin
-                    )) {
+                    if ($this->composite->validarDisponibilidad($cancha['cancha_id'], $fecha, $horaInicio, $horaFin)) {
                         $complejoDisponible = true;
-                        break 2; // al encontrar al menos una cancha disponible, salir
+                        break 2;
                     }
                 }
             }
@@ -186,67 +176,78 @@ class AlquilerFacade
                     'complejo_id' => $complejo['complejo_id'],
                     'nombre'      => $complejo['nombre'],
                     'url_imagen'  => $complejo['url_imagen'],
+                    'url_map'     => $complejo['url_map'] ?? null,
                     'descripcion' => $complejo['descripcion'],
-                    'direccion'   => $complejo['direccion_completa']
+                    'direccion'   => $complejo['direccion_completa'],
+                    'distrito_nombre' => $complejo['distrito_nombre'] ?? ''
                 ];
             }
         }
-        
 
-        return [
-            'success' => true,
-            'data' => $respuesta
-        ];
+        return ['success' => true, 'data' => $respuesta];
     }
 
-    public function obtenerGrillaAgenda(int $canchaId, string $fecha): array
+public function obtenerGrillaAgenda(int $canchaId, string $fecha): array
     {
         // 1. Obtener día de la semana
         $dias = [0 => 'Domingo', 1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado'];
-        $diaSemana = $dias[date('w', strtotime($fecha))];
+        $timestampFecha = strtotime($fecha);
+        $diaSemana = $dias[date('w', $timestampFecha)];
 
-        // 2. Obtener Horario Base (Apertura/Cierre)
-        // Usamos el repositorio existente. Si no hay horario, asumimos cerrado.
+        // 2. Obtener Horario de Apertura (Base)
+        // El 3er parámetro '' es vital para traer todos los rangos
         $horariosBase = $this->horarioRepo->getHorariosByCanchaAndDia($canchaId, $diaSemana, '');
 
-        // 3. Obtener Reservas Existentes del día (Ocupado)
-        // Hacemos una consulta directa para asegurar eficiencia
-        $db = \App\Core\Database::getConnection();
-        $sql = "SELECT hora_inicio, hora_fin FROM Reserva 
-                WHERE cancha_id = :cid 
-                  AND fecha_reserva = :fecha 
-                  AND estado IN ('confirmada', 'pendiente', 'pagada')"; // Ajusta estados según tu lógica
+        // 3. Obtener Reservas Ocupadas (CORREGIDO: Usamos ReservaDetalle)
+        $db = Database::getConnection();
+        $sql = "SELECT rd.hora_inicio, rd.hora_fin 
+                FROM ReservaDetalle rd
+                INNER JOIN Reserva r ON rd.reserva_id = r.reserva_id
+                WHERE rd.cancha_id = :cid 
+                  AND rd.fecha = :fecha 
+                  AND r.estado IN ('pendiente_pago', 'confirmada')"; // Ignoramos canceladas
+        
         $stmt = $db->prepare($sql);
         $stmt->execute([':cid' => $canchaId, ':fecha' => $fecha]);
-        $reservas = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $reservas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // 4. Construir Grilla (de 06:00 a 24:00)
+        // 4. Armar Grilla 24h (06:00 a 24:00 o lo que prefieras)
         $grilla = [];
-        $startHour = 6;
+        $startHour = 0; 
         $endHour = 24;
 
         for ($h = $startHour; $h < $endHour; $h++) {
-            $horaStr = sprintf("%02d:00:00", $h);
-            $horaFinStr = sprintf("%02d:00:00", $h + 1);
+            $slotInicio = strtotime("$fecha " . sprintf("%02d:00:00", $h));
+            $slotFin    = strtotime("$fecha " . sprintf("%02d:00:00", $h + 1));
             
-            $estado = 'closed'; // Por defecto cerrado
+            $estado = 'closed';
             $precio = 0;
 
-            // A. Verificar si está dentro del horario base (Abierto)
+            // A. Revisar si el complejo está ABIERTO
             foreach ($horariosBase as $base) {
-                if ($horaStr >= $base['hora_inicio'] && $horaFinStr <= $base['hora_fin']) {
+                $baseInicio = strtotime("$fecha " . $base['hora_inicio']);
+                $baseFin    = strtotime("$fecha " . $base['hora_fin']);
+                
+                // Fix para cierre a medianoche
+                if ($base['hora_fin'] === '00:00:00') {
+                    $baseFin = strtotime("$fecha 23:59:59");
+                }
+
+                if ($slotInicio >= $baseInicio && $slotFin <= $baseFin) {
                     $estado = 'available';
                     $precio = (float)$base['monto'];
                     break;
                 }
             }
 
-            // B. Verificar si hay conflicto con reservas (Ocupado)
+            // B. Revisar si ya está RESERVADO (Ocupado)
             if ($estado === 'available') {
                 foreach ($reservas as $res) {
-                    // Si la hora se solapa con una reserva
-                    // Lógica de solapamiento: (StartA < EndB) && (EndA > StartB)
-                    if ($horaStr < $res['hora_fin'] && $horaFinStr > $res['hora_inicio']) {
+                    $resInicio = strtotime("$fecha " . $res['hora_inicio']);
+                    $resFin    = strtotime("$fecha " . $res['hora_fin']);
+
+                    // Si hay solapamiento de horarios
+                    if ($slotInicio < $resFin && $slotFin > $resInicio) {
                         $estado = 'booked';
                         break;
                     }
@@ -254,10 +255,10 @@ class AlquilerFacade
             }
 
             $grilla[] = [
-                'hora' => sprintf("%02d:00", $h),
+                'hora'     => sprintf("%02d:00", $h),
                 'hora_fin' => sprintf("%02d:00", $h + 1),
-                'estado' => $estado, // available, booked, closed
-                'precio' => $precio
+                'estado'   => $estado, // available, booked, closed
+                'precio'   => $precio
             ];
         }
 

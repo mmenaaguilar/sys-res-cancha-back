@@ -90,8 +90,10 @@ $router->put('/api/horario-especial/status/{id}', 'HorarioEspecialController@cha
 // Rutas para la gestión de Reservas
 $router->post('/api/reserva/list', 'ReservaController@listReservas');
 $router->post('/api/reserva-detalle/list', 'ReservaController@listReservaDetalle');
-$router->post('/api/reserva', 'ReservaController@crear');           
+$router->post('/api/reserva', 'ReservaController@crear');   
+$router->post('/api/reservas/crear', 'ReservaController@create');        
 $router->put('/api/reserva/cancelar/{id}', 'ReservaController@cancelar');
+$router->post('/api/reserva/confirmar-pago/{id}', 'ReservaController@confirmarPago');
 
 // Rutas para la gestión de canchas fav
 $router->post('/api/favoritos', 'ComplejoDeportivoFavoritoController@create');
@@ -115,3 +117,7 @@ $router->get('/api/complejos/ubicaciones-activas', 'ComplejoDeportivoController@
 $router->get('/api/complejo-publico/{id}', 'ComplejoDeportivoController@show');
 
 $router->post('/api/alquiler/agenda', 'AlquilerController@verAgenda');
+
+$router->get('/api/canchas/{id}', 'CanchaController@show');
+$router->get('/api/metodos-pago', 'MetodoPagoController@list');
+

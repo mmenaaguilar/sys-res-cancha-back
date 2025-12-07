@@ -130,4 +130,18 @@ class ServicioRepository
         $stmt->execute();
         return $stmt->rowCount() > 0;
     }
+
+    public function getActiveByComplejoId(int $complejoId): array
+    {
+        $sql = "SELECT nombre, descripcion, monto 
+                FROM Servicios 
+                WHERE complejo_id = :id AND estado = 'activo'
+                ORDER BY nombre ASC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':id', $complejoId, \PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
 }

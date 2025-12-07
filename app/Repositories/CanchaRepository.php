@@ -163,4 +163,23 @@ class CanchaRepository
         $stmt->execute([':id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+    public function getByIdWithDetails(int $id): ?array
+    {
+        $sql = "SELECT 
+                    c.*,
+                    cd.nombre AS complejo_nombre,
+                    cd.direccion_detalle,
+                    td.nombre AS tipo_deporte_nombre
+                FROM Cancha c
+                INNER JOIN ComplejoDeportivo cd ON c.complejo_id = cd.complejo_id
+                INNER JOIN TipoDeporte td ON c.tipo_deporte_id = td.tipo_deporte_id
+                WHERE c.cancha_id = :id";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
 }

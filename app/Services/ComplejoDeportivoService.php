@@ -4,17 +4,21 @@ namespace App\Services;
 
 use App\Repositories\ComplejoDeportivoRepository;
 use App\Repositories\ContactoRepository;
+use App\Repositories\ServicioRepository;
+
 use Exception;
 
 class ComplejoDeportivoService
 {
     private ComplejoDeportivoRepository $repository;
     private ContactoRepository $contactoRepo;
+    private ServicioRepository $servicioRepo;
 
     public function __construct()
     {
         $this->repository = new ComplejoDeportivoRepository();
         $this->contactoRepo = new ContactoRepository();
+        $this->servicioRepo = new ServicioRepository();
     }
 
     private function formatPaginationResponse(array $result, int $page, int $limit): array
@@ -62,6 +66,10 @@ class ComplejoDeportivoService
         $complejo = $this->repository->getById($id);
         if (!$complejo) throw new Exception("Complejo no encontrado.");
         $complejo['contactos'] = $this->contactoRepo->getActiveByComplejoId($id);
+        return $complejo;
+        
+        $complejo['servicios'] = $this->servicioRepo->getActiveByComplejoId($id);
+
         return $complejo;
     }
 
