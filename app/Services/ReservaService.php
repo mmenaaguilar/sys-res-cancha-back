@@ -199,7 +199,7 @@ class ReservaService
                 'usuario_id'     => $data['usuario_id'],
                 'metodo_pago_id' => $data['metodo_pago_id'],
                 'total_pago'     => $total,
-                'estado'         => 'pendiente_pago', // El usuario pidió esto explícitamente
+                'estado'         => 'confirmada', // El usuario pidió esto explícitamente
                 'fecha_pago'     => date('Y-m-d H:i:s') // Guardamos el momento del intento de pago
             ]);
 
