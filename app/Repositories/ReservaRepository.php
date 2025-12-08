@@ -202,11 +202,29 @@ public function getReservasPaginated(?int $usuarioId, ?int $complejoId, ?string 
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
+    /**
+     * Obtiene los detalles de una reserva, incluyendo el complejo_id de la cancha.
+     *
+     * @param int $reservaId El ID de la reserva.
+     * @return array Los detalles de la reserva.
+     */
     public function getDetalles(int $reservaId): array
     {
-        $sql = "SELECT * FROM ReservaDetalle WHERE reserva_id = :id";
+        $sql = "
+            SELECT 
+                rd.*, 
+                c.complejo_id
+            FROM 
+                ReservaDetalle rd
+            JOIN 
+                Cancha c ON rd.cancha_id = c.cancha_id
+            WHERE 
+                rd.reserva_id = :id
+        ";
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id' => $reservaId]);
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

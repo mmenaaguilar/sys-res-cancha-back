@@ -30,9 +30,12 @@ class CreditoUsuarioRepository
     }
     public function getCreditosByUsuario(int $usuarioId): array
     {
-        $sql = "SELECT monto, fecha_otorgado
+        $sql = "SELECT credito_id, monto, fecha_otorgado, fecha_expiracion
                 FROM CreditoUsuario
-                WHERE usuario_id = :usuario_id
+                WHERE 
+                    usuario_id = :usuario_id 
+                    AND estado = 'activo'
+                    AND (fecha_expiracion IS NULL OR fecha_expiracion >= CURDATE())
                 ORDER BY fecha_otorgado DESC";
 
         $stmt = $this->db->prepare($sql);
@@ -40,5 +43,13 @@ class CreditoUsuarioRepository
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    public function changeStatus(int $id, string $nuevoEstado): bool
+    {
+        $sql = "UPDATE CreditoUsuario SET estado = :estado WHERE credito_id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':estado', $nuevoEstado);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
     }
 }
