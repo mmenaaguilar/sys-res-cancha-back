@@ -16,8 +16,18 @@ class CreditoUsuarioRepository
 
     public function crearCredito(array $data): int
     {
-        $sql = "INSERT INTO CreditoUsuario (usuario_id, monto, origen_reserva_id)
-                VALUES (:usuario_id, :monto, :origen_reserva_id)";
+        $sql = "INSERT INTO CreditoUsuario (
+                    usuario_id, 
+                    monto, 
+                    origen_reserva_id, 
+                    fecha_expiracion
+                )
+                VALUES (
+                    :usuario_id, 
+                    :monto, 
+                    :origen_reserva_id, 
+                    DATE_ADD(CURDATE(), INTERVAL 3 MONTH)
+                )";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
