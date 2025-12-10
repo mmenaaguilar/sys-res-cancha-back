@@ -37,8 +37,8 @@ class ComplejoDeportivoRepository
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $result ?: null;
     }
-    
- public function getComplejosByUbicacion(?int $depId, ?int $provId, ?int $distId): array
+
+    public function getComplejosByUbicacion(?int $depId, ?int $provId, ?int $distId): array
     {
         $sql = "SELECT 
                 cd.complejo_id,
@@ -77,7 +77,7 @@ class ComplejoDeportivoRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-      public function getAll(?int $usuarioId, ?string $searchTerm, int $limit, int $offset): array
+    public function getAll(?int $usuarioId, ?string $searchTerm, int $limit, int $offset): array
     {
         $sql = "SELECT DISTINCT 
                         c.*, 
@@ -91,7 +91,7 @@ class ComplejoDeportivoRepository
                 LEFT JOIN Provincia p ON c.provincia_id = p.provincia_id
                 LEFT JOIN Departamento dep ON c.departamento_id = dep.departamento_id
                 LEFT JOIN UsuarioRol ur ON c.complejo_id = ur.complejo_id
-                WHERE 1=1"; 
+                WHERE 1=1";
 
         $params = [];
 
@@ -133,7 +133,7 @@ class ComplejoDeportivoRepository
         return ['total' => $total, 'data' => $data];
     }
 
-  public function create(array $data): int
+    public function create(array $data): int
     {
         $sql = "INSERT INTO ComplejoDeportivo 
                 (nombre, departamento_id, provincia_id, distrito_id, direccion_detalle, url_imagen, url_map, descripcion, estado)
@@ -148,17 +148,17 @@ class ComplejoDeportivoRepository
             $stmt->bindValue(':departamento_id', !empty($data['departamento_id']) ? $data['departamento_id'] : null, PDO::PARAM_INT);
             $stmt->bindValue(':provincia_id', !empty($data['provincia_id']) ? $data['provincia_id'] : null, PDO::PARAM_INT);
             $stmt->bindValue(':distrito_id', !empty($data['distrito_id']) ? $data['distrito_id'] : null, PDO::PARAM_INT);
-            
+
             $stmt->bindValue(':direccion_detalle', $data['direccion_detalle']);
-            
+
             $urlImagen = $data['url_imagen'] ?? null;
             $urlMap = $data['url_map'] ?? null;
             $descripcion = $data['descripcion'] ?? null;
-            
+
             $stmt->bindValue(':url_imagen', $urlImagen, is_null($urlImagen) ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmt->bindValue(':url_map', $urlMap, is_null($urlMap) ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmt->bindValue(':descripcion', $descripcion, is_null($descripcion) ? PDO::PARAM_NULL : PDO::PARAM_STR);
-            
+
             $stmt->bindValue(':estado', $data['estado'] ?? 'activo');
 
             $stmt->execute();
@@ -166,14 +166,13 @@ class ComplejoDeportivoRepository
             if ($id === 0) throw new Exception("CRÍTICO: BD devolvió ID 0.");
             $this->db->commit();
             return $id;
-
         } catch (\PDOException $e) {
             if ($this->db->inTransaction()) $this->db->rollBack();
             throw new Exception("Error SQL: " . $e->getMessage());
         }
     }
 
-  public function update(int $id, array $data): bool
+    public function update(int $id, array $data): bool
     {
         $sql = "UPDATE ComplejoDeportivo
                 SET nombre = :nombre,
@@ -189,26 +188,26 @@ class ComplejoDeportivoRepository
 
         try {
             $stmt = $this->db->prepare($sql);
-            
-            $urlImagen = $data['url_imagen'] ?? null; 
+
+            $urlImagen = $data['url_imagen'] ?? null;
             $urlMap = $data['url_map'] ?? null;
             $descripcion = $data['descripcion'] ?? null;
             $estado = $data['estado'] ?? 'activo';
-            
+
             $stmt->bindValue(':nombre', $data['nombre']);
-            
+
             $stmt->bindValue(':departamento_id', !empty($data['departamento_id']) ? $data['departamento_id'] : null, PDO::PARAM_INT);
             $stmt->bindValue(':provincia_id', !empty($data['provincia_id']) ? $data['provincia_id'] : null, PDO::PARAM_INT);
             $stmt->bindValue(':distrito_id', !empty($data['distrito_id']) ? $data['distrito_id'] : null, PDO::PARAM_INT);
-            
+
             $stmt->bindValue(':direccion_detalle', $data['direccion_detalle'] ?? '');
-            
+
             $stmt->bindValue(':url_imagen', $urlImagen, is_null($urlImagen) ? PDO::PARAM_NULL : PDO::PARAM_STR);
-            
+
             $stmt->bindValue(':url_map', $urlMap, is_null($urlMap) ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmt->bindValue(':descripcion', $descripcion, is_null($descripcion) ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmt->bindValue(':estado', $estado);
-            
+
             $stmt->bindValue(':id', $id, PDO::PARAM_INT);
 
             return $stmt->execute();
@@ -217,7 +216,7 @@ class ComplejoDeportivoRepository
         }
     }
 
-    
+
     public function changeStatus(int $id, string $estado): bool
     {
         $sql = "UPDATE ComplejoDeportivo SET estado = :estado WHERE complejo_id = :id";

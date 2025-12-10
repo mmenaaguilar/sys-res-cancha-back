@@ -51,10 +51,12 @@ class ComplejoDeportivoService
         $page = max(1, $page);
         $offset = ($page - 1) * $limit;
         $searchTerm = trim($searchTerm ?? '');
-        $result = $this->repository->getAll($usaurioId,
+        $result = $this->repository->getAll(
+            $usaurioId,
             $searchTerm,
             $limit,
-            $offset);
+            $offset
+        );
         return $this->formatPaginationResponse($result, $page, $limit);
     }
 
@@ -64,26 +66,26 @@ class ComplejoDeportivoService
         if (!$complejo) throw new Exception("Complejo no encontrado.");
         $complejo['contactos'] = $this->contactoRepo->getActiveByComplejoId($id);
         return $complejo;
-        
+
         $complejo['servicios'] = $this->servicioRepo->getActiveByComplejoId($id);
 
         return $complejo;
     }
 
- public function create(array $data, ?array $file = null): int
+    public function create(array $data, ?array $file = null): int
     {
         if (empty($data['nombre'])) {
             throw new Exception("El nombre del complejo es obligatorio.");
         }
         $data['estado'] = $data['estado'] ?? 'activo';
 
-       
+
         if ($file && isset($file['tmp_name'])) {
-            $data['url_imagen'] = $this->handleImage($file); 
+            $data['url_imagen'] = $this->handleImage($file);
         } else {
-             $data['url_imagen'] = null; 
+            $data['url_imagen'] = null;
         }
-        
+
         return $this->repository->create($data);
     }
 
@@ -93,7 +95,7 @@ class ComplejoDeportivoService
         if (!$complejo) throw new Exception("Complejo no encontrado.");
 
         $this->validate($data);
-        
+
         if ($file && isset($file['tmp_name']) && is_uploaded_file($file['tmp_name'])) {
             $data['url_imagen'] = $this->handleImage($file);
         } else {

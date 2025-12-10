@@ -51,7 +51,7 @@ class ComplejoDeportivoController extends ApiHelper
         }
     }
 
- public function create()
+    public function create()
     {
         try {
             $data = $this->initRequest('POST');
@@ -61,12 +61,11 @@ class ComplejoDeportivoController extends ApiHelper
             }
 
             // 3. Obtener el archivo desde 
-            $file = $_FILES['cFile'] ?? $_FILES['imagen'] ?? null; 
+            $file = $_FILES['cFile'] ?? $_FILES['imagen'] ?? null;
 
             $id = $this->service->create($data, $file);
-            
-            $this->sendResponse(['complejo_id' => $id], 201);
 
+            $this->sendResponse(['complejo_id' => $id], 201);
         } catch (Exception $e) {
             $this->sendError($e);
         }
@@ -76,11 +75,11 @@ class ComplejoDeportivoController extends ApiHelper
     {
         try {
 
-            $data = $this->initRequest('PUT'); 
-            
+            $data = $this->initRequest('PUT');
+
             if (empty($data)) {
-                 
-                 $data = $this->initRequest('POST');
+
+                $data = $this->initRequest('POST');
             }
 
             if ($data === null || empty($data)) {
@@ -91,7 +90,7 @@ class ComplejoDeportivoController extends ApiHelper
             $file = $_FILES['cFile'] ?? $_FILES['imagen'] ?? null;
 
             $this->service->update($id, $data, $file);
-            
+
             $this->sendResponse([
                 'complejo_id' => $id,
                 'mensaje' => 'Actualizado correctamente'
