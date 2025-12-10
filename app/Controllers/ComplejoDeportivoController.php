@@ -15,6 +15,17 @@ class ComplejoDeportivoController extends ApiHelper
         $this->service = new ComplejoDeportivoService();
     }
 
+    public function show(int $id)
+    {
+        try {
+
+            $complejo = $this->service->getById($id);
+            $this->sendResponse($complejo);
+        } catch (Exception $e) {
+            $this->sendError($e);
+        }
+    }
+
     public function getComplejo()
     {
         try {
@@ -43,18 +54,15 @@ class ComplejoDeportivoController extends ApiHelper
  public function create()
     {
         try {
-            // 1. initRequest ahora lee $_POST (datos del formulario)
             $data = $this->initRequest('POST');
 
-            // 2. Validación básica
             if (empty($data)) {
                 throw new Exception("No se recibieron datos para crear el complejo.");
             }
 
-            // 3. Obtener el archivo desde el array global que PHP pobló
-            $file = $_FILES['cFile'] ?? $_FILES['imagen'] ?? null; // Usamos 'cFile' o 'imagen' como fallback
+            // 3. Obtener el archivo desde 
+            $file = $_FILES['cFile'] ?? $_FILES['imagen'] ?? null; 
 
-            // 4. Llamar al servicio
             $id = $this->service->create($data, $file);
             
             $this->sendResponse(['complejo_id' => $id], 201);
@@ -67,11 +75,11 @@ class ComplejoDeportivoController extends ApiHelper
     public function update(int $id)
     {
         try {
-            // initRequest leerá el FormData, si existe
+
             $data = $this->initRequest('PUT'); 
             
             if (empty($data)) {
-                 // Si initRequest falla al leer PUT, intentamos leer POST (para el truco _method)
+                 
                  $data = $this->initRequest('POST');
             }
 
@@ -108,6 +116,16 @@ class ComplejoDeportivoController extends ApiHelper
         try {
             $this->service->delete($id);
             $this->sendResponse(['complejo_id' => $id, 'mensaje' => 'Eliminado correctamente']);
+        } catch (Exception $e) {
+            $this->sendError($e);
+        }
+    }
+
+    public function getUbicaciones()
+    {
+        try {
+            $data = $this->service->getUbicacionesDisponibles();
+            $this->sendResponse($data);
         } catch (Exception $e) {
             $this->sendError($e);
         }

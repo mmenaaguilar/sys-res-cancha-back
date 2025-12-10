@@ -24,7 +24,6 @@ class UbigeoRepository
      */
     public function getAllDepartamentos(): array
     {
-        // Seleccionamos 'nombre AS name' para estandarizar con el frontend
         $sql = "SELECT departamento_id AS id, nombre AS name FROM Departamento ORDER BY nombre ASC";
         $stmt = $this->db->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -63,33 +62,26 @@ class UbigeoRepository
             $whereClauses = [];
             $binds = [];
 
-            // Construir la cláusula WHERE: siempre buscamos coincidencias con AND
-
-            // Nivel 1: DEPARTAMENTO (Siempre incluido si hay datos)
             if (isset($components[0]) && !empty($components[0])) {
                 $whereClauses[] = "D.nombre LIKE :dep_term";
                 $binds['dep_term'] = "%{$components[0]}%";
             }
 
-            // Nivel 2: PROVINCIA (Solo si el nivel es 'provincia' o 'distrito')
             if (in_array($level, ['provincia', 'distrito']) && isset($components[1]) && !empty($components[1])) {
                 $whereClauses[] = "P.nombre LIKE :prov_term";
                 $binds['prov_term'] = "%{$components[1]}%";
             }
 
-            // Nivel 3: DISTRITO (Solo si el nivel es 'distrito')
             if ($level === 'distrito' && isset($components[2]) && !empty($components[2])) {
                 $whereClauses[] = "T3.nombre LIKE :dist_term";
                 $binds['dist_term'] = "%{$components[2]}%";
             }
 
-            // Si se llegó aquí, $whereClauses no debería estar vacío.
             $sql .= " WHERE " . implode(" AND ", $whereClauses);
             $sql .= " ORDER BY label ASC LIMIT 30";
 
             $stmt = $this->db->prepare($sql);
 
-            // Vincular los parámetros de forma segura
             foreach ($binds as $param => &$value) {
                 $stmt->bindParam(":$param", $value, PDO::PARAM_STR);
             }

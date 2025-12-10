@@ -12,7 +12,6 @@ class TipoDeporteService
 
     public function __construct()
     {
-        // Instancia el Repositorio
         $this->tipoDeporteRepository = new TipoDeporteRepository();
     }
 
@@ -23,7 +22,6 @@ class TipoDeporteService
      */
     public function getComboList(): array
     {
-        // Se podría agregar lógica de caché o filtros aquí si fuera necesario
         return $this->tipoDeporteRepository->getAllForCombo();
     }
 }

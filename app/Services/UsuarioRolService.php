@@ -17,18 +17,15 @@ class UsuarioRolService
 
     public function invitarGestor(string $email, int $complejoId, int $rolId): int
     {
-        // 1. Validar Email
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new Exception("El formato del correo no es válido.", 400);
         }
 
-        // 2. Buscar Usuario por Email
         $user = $this->usuarioRolRepository->findUserByEmail($email);
         if (!$user) {
             throw new Exception("No se encontró ningún usuario registrado con el correo: $email", 404);
         }
 
-        // 3. Asignar Rol (Reutilizamos la lógica de crear)
         return $this->createUsuarioRol([
             'usuario_id' => $user['usuario_id'],
             'complejo_id' => $complejoId,
@@ -42,7 +39,7 @@ class UsuarioRolService
 
         return $this->createUsuarioRol([
             'usuario_id' => $user['usuario_id'],
-            'complejo_id' => $complejoId, // <--- Aquí debe llegar un INT válido
+            'complejo_id' => $complejoId,
             'rol_id' => $rolId,
             'estado' => 'activo'
         ]);
@@ -67,7 +64,6 @@ class UsuarioRolService
             $data['complejo_id'] = null;
         }
 
-        // Manejo del estado (si no viene, por defecto es 'activo' para create)
         $estado = strtolower($data['estado'] ?? 'activo');
         if (!in_array($estado, ['activo', 'inactivo'])) {
             throw new Exception("El estado debe ser 'activo' o 'inactivo'.");

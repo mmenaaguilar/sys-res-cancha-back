@@ -31,20 +31,18 @@ class HorarioBaseService
     }
 
     /**
-     * 🔹 Formato de paginación común
+     *  Formato de paginación común
      */
     private function formatPaginationResponse(array $result, int $page, int $limit): array
     {
         $total = $result['total'];
 
-        // Calcular total de páginas
         $totalPages = $limit > 0 ? ceil($total / $limit) : 0;
-        if ($total == 0) $totalPages = 1; // Si no hay datos, hay 1 página vacía.
+        if ($total == 0) $totalPages = 1;
 
-        // Asegurar que la página actual no exceda el total de páginas
+   
         $page = min($page, (int)$totalPages);
 
-        // Evaluar presencia de página siguiente y anterior
         $hasNextPage = $page < $totalPages;
         $hasPrevPage = $page > 1;
 
@@ -80,7 +78,6 @@ class HorarioBaseService
 
         $result = $this->repository->getPaginated($limit, $offset, $canchaId, $diaSemana);
 
-        // 🔥 Ahora se utiliza el nuevo formatter
         return $this->formatPaginationResponse($result, $page, $limit);
     }
 
@@ -119,7 +116,6 @@ class HorarioBaseService
             throw new Exception("Contacto no encontrado.");
         }
 
-        // Determina el nuevo estado
         $nuevoEstado = ($horaiobase['estado'] === 'activo') ? 'inactivo' : 'activo';
 
         if ($this->repository->changeStatus($id, $nuevoEstado)) {
@@ -134,7 +130,6 @@ class HorarioBaseService
             throw new Exception("Datos inválidos para clonar horarios.");
         }
 
-        // Llamar al repositorio que ya tiene getHorariosByCanchaYDia
         $originales = $this->repository->getHorariosByCanchaYDia($canchaId, $fromDia);
 
         if (empty($originales)) {
@@ -143,11 +138,9 @@ class HorarioBaseService
 
         $clonadosIds = [];
         foreach ($originales as $horarioData) {
-            // Instanciar objeto Prototype
             $horarioProto = new \App\Patterns\Prototype\horarioPrototype\HorarioBasePrototype($horarioData);
             $clonado = $horarioProto->clone(['dia_semana' => $toDia]);
 
-            // Convertir a array antes de insertar
             $clonadosIds[] = $this->repository->insert($clonado->toArray());
         }
 

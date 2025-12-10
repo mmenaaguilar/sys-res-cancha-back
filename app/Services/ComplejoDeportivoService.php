@@ -3,29 +3,33 @@
 namespace App\Services;
 
 use App\Repositories\ComplejoDeportivoRepository;
+use App\Repositories\ContactoRepository;
+use App\Repositories\ServicioRepository;
+
 use Exception;
 
 class ComplejoDeportivoService
 {
     private ComplejoDeportivoRepository $repository;
+    private ContactoRepository $contactoRepo;
+    private ServicioRepository $servicioRepo;
 
     public function __construct()
     {
         $this->repository = new ComplejoDeportivoRepository();
+        $this->contactoRepo = new ContactoRepository();
+        $this->servicioRepo = new ServicioRepository();
     }
 
     private function formatPaginationResponse(array $result, int $page, int $limit): array
     {
         $total = $result['total'];
 
-        // Calcular total de páginas
         $totalPages = $limit > 0 ? ceil($total / $limit) : 0;
-        if ($total == 0) $totalPages = 1; // Si no hay datos, hay 1 página vacía.
+        if ($total == 0) $totalPages = 1;
 
-        // Asegurar que la página actual no es mayor al total de páginas
         $page = min($page, (int)$totalPages);
 
-        // Calcular next_page y prev_page
         $hasNextPage = $page < $totalPages;
         $hasPrevPage = $page > 1;
 
@@ -58,6 +62,11 @@ class ComplejoDeportivoService
     {
         $complejo = $this->repository->getById($id);
         if (!$complejo) throw new Exception("Complejo no encontrado.");
+        $complejo['contactos'] = $this->contactoRepo->getActiveByComplejoId($id);
+        return $complejo;
+        
+        $complejo['servicios'] = $this->servicioRepo->getActiveByComplejoId($id);
+
         return $complejo;
     }
 
@@ -68,17 +77,16 @@ class ComplejoDeportivoService
         }
         $data['estado'] = $data['estado'] ?? 'activo';
 
-        // ✅ LÓGICA DE CREATE: Procesar archivo si viene
+       
         if ($file && isset($file['tmp_name'])) {
-            $data['url_imagen'] = $this->handleImage($file); // Guarda la URL que genera handleImage
+            $data['url_imagen'] = $this->handleImage($file); 
         } else {
-             $data['url_imagen'] = null; // Si no viene archivo, es null
+             $data['url_imagen'] = null; 
         }
         
         return $this->repository->create($data);
     }
 
-    // ✅ CORRECCIÓN CLAVE AQUÍ: Lógica para mantener la URL
     public function update(int $id, array $data, ?array $file = null): bool
     {
         $complejo = $this->repository->getById($id);
@@ -86,18 +94,11 @@ class ComplejoDeportivoService
 
         $this->validate($data);
         
-        // 1. Si se sube nueva imagen (ARCHIVO en $_FILES), procesar
         if ($file && isset($file['tmp_name']) && is_uploaded_file($file['tmp_name'])) {
-            // Manejar subida (y opcionalmente eliminar la anterior)
             $data['url_imagen'] = $this->handleImage($file);
         } else {
-            // 2. Si NO se sube archivo nuevo: MANTENER LA URL ANTERIOR DE LA BD
             $data['url_imagen'] = $complejo['url_imagen'];
         }
-
-        // Si el frontend envía 'url_imagen' (como texto) y no hay 'file', aquí PHP usará
-        // $data['url_imagen'] = $complejo['url_imagen'] (el valor viejo de la BD). 
-        
         return $this->repository->update($id, $data);
     }
 
@@ -123,7 +124,6 @@ class ComplejoDeportivoService
         $complejo = $this->repository->getById($id);
         if (!$complejo) throw new Exception("Complejo no encontrado.");
 
-        // Opcional: eliminar imagen
         if (!empty($complejo['url_imagen'])) {
             $path = __DIR__ . '/../../public' . $complejo['url_imagen'];
             if (file_exists($path)) unlink($path);
@@ -153,5 +153,10 @@ class ComplejoDeportivoService
         }
 
         return 'public/uploads/complejos/' . $filename;
+    }
+
+    public function getUbicacionesDisponibles(): array
+    {
+        return $this->repository->getDistritosConComplejos();
     }
 }

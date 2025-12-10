@@ -14,12 +14,14 @@ class ReservaRepository
         $this->db = Database::getConnection();
     }
 
-    public function getReservasPaginated(?int $usuarioId, ?int $complejoId, ?string $searchTerm, int $limit, int $offset): array
+public function getReservasPaginated(?int $usuarioId, ?int $complejoId, ?string $searchTerm, int $limit, int $offset): array
     {
         $baseSql = "FROM Reserva r
                     JOIN Usuarios u ON r.usuario_id = u.usuario_id
                     LEFT JOIN ReservaDetalle rd ON rd.reserva_id = r.reserva_id
-                    LEFT JOIN Cancha c ON rd.cancha_id = c.cancha_id";
+                    LEFT JOIN Cancha c ON rd.cancha_id = c.cancha_id
+                    LEFT JOIN ComplejoDeportivo cd ON c.complejo_id = cd.complejo_id
+                    LEFT JOIN TipoDeporte tp ON c.tipo_deporte_id = tp.tipo_deporte_id";
 
         $whereClauses = [];
         $params = [];
@@ -35,47 +37,60 @@ class ReservaRepository
         }
 
         if (!empty($searchTerm)) {
-            $whereClauses[] = "(u.nombre LIKE :search OR u.correo LIKE :search)";
+            $whereClauses[] = "(u.nombre LIKE :search OR u.correo LIKE :search OR cd.nombre LIKE :search OR c.nombre LIKE :search)";
             $params[':search'] = '%' . $searchTerm . '%';
         }
 
         $where = !empty($whereClauses) ? " WHERE " . implode(" AND ", $whereClauses) : "";
 
-        // Total
         $totalSql = "SELECT COUNT(DISTINCT r.reserva_id) AS total " . $baseSql . $where;
         $stmt = $this->db->prepare($totalSql);
-        $stmt->execute($params);
-        $total = $stmt->fetch(\PDO::FETCH_ASSOC)['total'] ?? 0;
+        foreach ($params as $key => $val) $stmt->bindValue($key, $val);
+        $stmt->execute();
+        $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        // --- CORRECCIÓN AQUÍ ---
-        // Agregamos u.correo y u.telefono al SELECT
-        $dataSql = "SELECT DISTINCT 
+        //  SELECT MAESTRO: Trae todo lo necesario para ambas vistas
+        // Agrupamos por reserva_id si es admin (para no repetir filas por horas), 
+        // o mostramos detalles si es usuario (para ver cada partido).
+        // En este caso, priorizamos mostrar el primer detalle disponible por reserva para la tabla general.
+        
+        $dataSql = "SELECT 
                         r.reserva_id, 
-                        r.usuario_id, 
-                        u.nombre AS usuario_nombre, 
-                        u.correo,     -- Agregado
-                        u.telefono,   -- Agregado (opcional, pero útil)
+                        r.estado,
+                        r.total_pago,
                         r.metodo_pago_id,
-                        r.total_pago, 
-                        r.estado, 
-                        r.fecha_creacion
+                        r.fecha_creacion,
+                        
+                        u.nombre AS usuario_nombre,
+                        u.correo,
+                        u.telefono,
+
+                        rd.fecha,
+                        rd.hora_inicio,
+                        rd.hora_fin,
+                        rd.precio,
+
+                        cd.nombre AS complejo_nombre,
+                        c.nombre AS cancha_nombre,
+                        tp.nombre AS deporte
                     " . $baseSql . $where . " 
+                    -- Agrupamos para evitar duplicados en la tabla de Admin si una reserva tiene 2 bloques separados
+                    GROUP BY r.reserva_id, rd.detalle_id 
                     ORDER BY r.fecha_creacion DESC
                     LIMIT :limit OFFSET :offset";
 
         $stmt = $this->db->prepare($dataSql);
-        foreach ($params as $key => &$val) {
-            $stmt->bindParam($key, $val);
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val);
         }
-        $stmt->bindParam(':limit', $limit, \PDO::PARAM_INT);
-        $stmt->bindParam(':offset', $offset, \PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        
         $stmt->execute();
-
-        $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         return [
             'total' => (int)$total,
-            'data' => $data
+            'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)
         ];
     }
 
@@ -88,7 +103,6 @@ class ReservaRepository
         $stmt->execute();
         $total = $stmt->fetch(\PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        // 2. Data con JOIN corregido a ComplejoDeportivo
         $dataSql = "SELECT 
                         rd.detalle_id, 
                         rd.reserva_id, 
@@ -123,18 +137,20 @@ class ReservaRepository
     public function createReserva(array $data): int
     {
         $sql = "INSERT INTO Reserva (
-                    usuario_id, metodo_pago_id, total_pago, estado
+                    usuario_id, metodo_pago_id, total_pago, estado, fecha_pago
                 ) VALUES (
-                    :usuario_id, :metodo_pago_id, :total_pago, :estado
+                    :usuario_id, :metodo_pago_id, :total_pago, :estado, :fecha_pago
                 )";
 
         $stmt = $this->db->prepare($sql);
+        $fechaPago = $data['fecha_pago'] ?? null;
 
         $stmt->execute([
             ':usuario_id'     => $data['usuario_id'],
             ':metodo_pago_id' => $data['metodo_pago_id'],
             ':total_pago'     => $data['total_pago'],
             ':estado'     => $data['estado'],
+            ':fecha_pago' => $fechaPago
         ]);
 
         return (int) $this->db->lastInsertId();
@@ -176,11 +192,29 @@ class ReservaRepository
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
+    /**
+     * Obtiene los detalles de una reserva, incluyendo el complejo_id de la cancha.
+     *
+     * @param int $reservaId El ID de la reserva.
+     * @return array Los detalles de la reserva.
+     */
     public function getDetalles(int $reservaId): array
     {
-        $sql = "SELECT * FROM ReservaDetalle WHERE reserva_id = :id";
+        $sql = "
+            SELECT 
+                rd.*, 
+                c.complejo_id
+            FROM 
+                ReservaDetalle rd
+            JOIN 
+                Cancha c ON rd.cancha_id = c.cancha_id
+            WHERE 
+                rd.reserva_id = :id
+        ";
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id' => $reservaId]);
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

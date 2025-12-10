@@ -57,7 +57,6 @@ namespace App\Controllers;
                     $this->sendResponse(['usuario_id' => $id, 'mensaje' => 'No se realizaron cambios en el usuario.'], 200);
                 }
             } catch (Exception $e) {
-                // Mantener la lógica específica para códigos 409 y 404
                 $code = ($e->getCode() === 409 || $e->getCode() === 404) ? $e->getCode() : 400;
                 $this->sendError($e, $code);
             }

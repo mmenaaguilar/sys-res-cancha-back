@@ -4,20 +4,27 @@ namespace App\Services;
 
 use App\Repositories\ReservaRepository;
 use App\Repositories\PoliticaRepository;
+use App\Repositories\CreditoUsuarioRepository;
 use App\Patterns\Strategies\cancelacionStrategy\CancelacionContext;
 use App\Patterns\Strategies\cancelacionStrategy\CancelacionCreditoCompleto;
 use App\Patterns\Strategies\cancelacionStrategy\CancelacionReembolsoFisico;
+use App\Core\Database;
 use Exception;
+use PDO;
 
 class ReservaService
 {
     private ReservaRepository $reservaRepo;
     private PoliticaRepository $politicaRepo;
+    private CreditoUsuarioRepository $creditoRepo;
+    private PDO $db;
 
     public function __construct()
     {
         $this->reservaRepo = new ReservaRepository();
         $this->politicaRepo = new PoliticaRepository();
+        $this->creditoRepo = new CreditoUsuarioRepository();
+        $this->db = Database::getConnection();
     }
     private function formatPaginationResponse(array $result, int $page, int $limit): array
     {
@@ -82,7 +89,7 @@ class ReservaService
         // 3. Calcular horas disponibles usando los datos del DETALLE
         $fechaHoraInicio = new \DateTime($detallePrincipal['fecha'] . ' ' . $detallePrincipal['hora_inicio']);
         $ahora = new \DateTime();
-        
+         
         // Comparar
         if ($fechaHoraInicio < $ahora) {
              throw new Exception("No se puede cancelar una reserva pasada.");
@@ -93,7 +100,7 @@ class ReservaService
 
         // 4. Obtener política usando el ID de la cancha del detalle
         $politica = $this->politicaRepo->getPoliticaMasEstricta(
-            $detallePrincipal['cancha_id'], // Usamos el ID del detalle, no de la reserva
+            $detallePrincipal['complejo_id'], // Usamos el ID del detalle, no de la reserva
             $horasDisponibles
         );
 
@@ -140,34 +147,113 @@ class ReservaService
         ];
     }
     
-    public function crearReserva(array $data): array
+public function crearReserva(array $data): array
     {
-        // Validación básica
-        if (!isset($data['usuario_id']) || !isset($data['metodo_pago_id']) || !isset($data['detalles'])) {
-            throw new Exception("Datos incompletos para crear reserva.");
+        if (empty($data['usuario_id']) || empty($data['metodo_pago_id']) || empty($data['detalles'])) {
+            throw new Exception("Datos incompletos para crear reserva.", 400);
         }
 
-        // Calcular total
-        $total = 0;
+        // 0. Datos del crédito
+        $creditoId = $data['credito_id'] ?? null;
+        if ($creditoId === '0' || $creditoId === 'null' || $creditoId === '-1' || $creditoId === 0) {
+            $creditoId = null;
+        }
+        $montoCredito = isset($data['monto_credito']) ? floatval($data['monto_credito']) : 0;
+
+        // 1. Calcular Subtotal (Precio Original)
+        $subtotal = 0;
         foreach ($data['detalles'] as $d) {
-            $total += $d['precio'];
+            $subtotal += $d['precio'];
         }
 
-        // Crear reserva (CABEZA)
-        $reservaId = $this->reservaRepo->createReserva([
-            'usuario_id'     => $data['usuario_id'],
-            'metodo_pago_id' => $data['metodo_pago_id'],
-            'total_pago'     => $total,
-            'estado'         => 'confirmada']);
+        // 2. Calcular Total Final Real (Aplicando descuento)
+        $totalPagarReal = $subtotal;
+        if ($creditoId && $montoCredito > 0) {
+            $descuentoAplicable = min($subtotal, $montoCredito);
+            $totalPagarReal = $subtotal - $descuentoAplicable;
+        }
+        
+        // Evitar negativos o errores de punto flotante pequeños
+        $totalPagarReal = max(0, round($totalPagarReal, 2));
 
-        // Crear DETALLES
-        foreach ($data['detalles'] as $d) {
-            $this->reservaRepo->addDetalle($reservaId, $d);
+        // -----------------------------------------------------------
+        // 3. CALCULAR FACTOR DE PRORRATEO
+        // Esto sirve para reducir proporcionalmente el precio de cada detalle
+        // Si el subtotal era 100 y pagan 80, el factor es 0.8
+        // -----------------------------------------------------------
+        $factorDescuento = ($subtotal > 0) ? ($totalPagarReal / $subtotal) : 1;
+
+
+        // 4. Lógica de Agrupación (Merge)
+        $detallesOriginales = $data['detalles'];
+        usort($detallesOriginales, function($a, $b) {
+            return strcmp($a['hora_inicio'], $b['hora_inicio']);
+        });
+
+        $detallesAgrupados = [];
+        foreach ($detallesOriginales as $slot) {
+            if (empty($detallesAgrupados)) {
+                $detallesAgrupados[] = $slot;
+                continue;
+            }
+            $ultimoIndex = count($detallesAgrupados) - 1;
+            $ultimoSlot = &$detallesAgrupados[$ultimoIndex];
+
+            if ($ultimoSlot['hora_fin'] === $slot['hora_inicio']) {
+                $ultimoSlot['hora_fin'] = $slot['hora_fin'];
+                $ultimoSlot['precio'] += $slot['precio'];
+            } else {
+                $detallesAgrupados[] = $slot;
+            }
         }
 
-        return [
-            'reserva_id' => $reservaId,
-            'total'      => $total
-        ];
+        try {
+            $this->db->beginTransaction();
+
+            // 5. Crear Cabecera (Reserva)
+            $reservaId = $this->reservaRepo->createReserva([
+                'usuario_id'     => $data['usuario_id'],
+                'metodo_pago_id' => $data['metodo_pago_id'],
+                'total_pago'     => $totalPagarReal, // Precio ya descontado
+                'estado'         => 'confirmada',
+                'fecha_pago'     => date('Y-m-d H:i:s')
+            ]);
+
+            // 6. Crear Detalles (APLICANDO EL FACTOR DE DESCUENTO)
+            foreach ($detallesAgrupados as $d) {
+                
+                // Aquí aplicamos el descuento a cada item individualmente
+                $precioOriginalItem = floatval($d['precio']);
+                $precioConDescuentoItem = $precioOriginalItem * $factorDescuento;
+
+                $this->reservaRepo->addDetalle($reservaId, [
+                    'cancha_id'   => $data['cancha_id'],
+                    'fecha'       => $data['fecha_reserva'],
+                    'hora_inicio' => $d['hora_inicio'],
+                    'hora_fin'    => $d['hora_fin'],
+                    // Guardamos el precio reducido en el detalle también
+                    'precio'      => round($precioConDescuentoItem, 2) 
+                ]);
+            }
+            
+            // 7. Actualizar estado del crédito
+            if ($creditoId) {
+                $this->creditoRepo->changeStatus((int)$creditoId, 'usado');
+            }
+
+            $this->db->commit();
+
+            return [
+                'reserva_id' => $reservaId,
+                'total'      => $totalPagarReal,
+                'mensaje'    => 'Reserva creada con éxito.'
+            ];
+
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
     }
 }

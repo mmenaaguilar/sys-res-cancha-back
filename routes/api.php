@@ -60,7 +60,7 @@ $router->post('/api/usuarios/creditos', 'UsuarioController@getCreditos');
 $router->post('/api/usuarios/cambiar-contrasena', 'UsuarioController@cambiarContrasena');
 
 // RUTA PARA VALIDAR DISPONIBILIDAD
-$router->post('/api/alquiler/validar-disponibilidad', 'AlquilerController@validarDisponibilidad');
+$router->post('/api/alquiler/agenda', 'AlquilerController@validarDisponibilidad');
 // Listar complejos disponibles por distrito
 $router->post('/api/alquiler/buscar-complejos-disponibles', 'AlquilerController@buscarComplejosDisponiblesPorDistrito');
 
@@ -90,8 +90,10 @@ $router->put('/api/horario-especial/status/{id}', 'HorarioEspecialController@cha
 // Rutas para la gestión de Reservas
 $router->post('/api/reserva/list', 'ReservaController@listReservas');
 $router->post('/api/reserva-detalle/list', 'ReservaController@listReservaDetalle');
-$router->post('/api/reserva', 'ReservaController@crear');           
+$router->post('/api/reserva', 'ReservaController@crear');   
+$router->post('/api/reservas/crear', 'ReservaController@create');        
 $router->put('/api/reserva/cancelar/{id}', 'ReservaController@cancelar');
+$router->post('/api/reserva/confirmar-pago/{id}', 'ReservaController@confirmarPago');
 
 // Rutas para la gestión de canchas fav
 $router->post('/api/favoritos', 'ComplejoDeportivoFavoritoController@create');
@@ -108,4 +110,12 @@ $router->get('/api/ubigeo/detalle/{distrito_id}', 'UbigeoController@getDetalleUb
 $router->post('/api/gestores/list', 'UsuarioRolController@list');
 $router->post('/api/gestores/invite', 'UsuarioRolController@invite');
 $router->delete('/api/gestores/{id}', 'UsuarioRolController@delete');
+
+
+$router->get('/api/complejos/ubicaciones-activas', 'ComplejoDeportivoController@getUbicaciones');
+
+$router->get('/api/complejo-publico/{id}', 'ComplejoDeportivoController@show');
+
+$router->get('/api/canchas/{id}', 'CanchaController@show');
+$router->get('/api/metodos-pago', 'MetodoPagoController@list');
 

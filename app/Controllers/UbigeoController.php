@@ -73,23 +73,20 @@ public function getDepartamentos()
         $level = null;
 
         if ($numComponents === 3) {
-            $level = 'distrito'; // Ej: Tacna, Tacna, Tacna
+            $level = 'distrito'; 
         } elseif ($numComponents === 2) {
-            $level = 'provincia'; // Ej: Tacna, Tacna
+            $level = 'provincia'; 
         } elseif ($numComponents === 1 && strlen($components[0]) >= 2) {
-            $level = 'departamento'; // Ej: Tacna
+            $level = 'departamento'; 
         } else {
-            // Si el término es vacío o muy corto (menos de 2 caracteres)
             http_response_code(400);
             echo json_encode(['error' => 'Término de búsqueda inválido o muy corto (mínimo 2 caracteres).']);
             return;
         }
 
         try {
-            // 2. Llamar al Service con los componentes y el nivel detectado
             $data = $this->ubigeoService->findDistritosByHierarchy($components, $level);
 
-            // 3. Respuesta exitosa
             http_response_code(200);
             echo json_encode([
                 'success' => true,

@@ -69,7 +69,7 @@ class ReservaController extends ApiHelper
     /**
      * Crea una nueva reserva.
      */
-    public function crear()
+    public function create()
     {
         $body = $this->initRequest("POST");
         if ($body === null) return;
@@ -93,4 +93,23 @@ class ReservaController extends ApiHelper
             $this->sendError($e);
         }
     }
+
+    public function confirmarPago(int $id)
+    {
+        try {
+            $db = \App\Core\Database::getConnection();
+            $stmt = $db->prepare("UPDATE Reserva SET estado = 'confirmada', fecha_pago = NOW() WHERE reserva_id = :id");
+            $stmt->execute([':id' => $id]);
+            
+            if ($stmt->rowCount() > 0) {
+                $this->sendResponse(['mensaje' => 'Reserva confirmada correctamente']);
+            } else {
+                $this->sendError("No se pudo confirmar o ya estaba confirmada", 400);
+            }
+        } catch (Exception $e) {
+            $this->sendError($e);
+        }
+    }
+
+
 }

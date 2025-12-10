@@ -27,7 +27,7 @@ class ServicioPorHorarioRepository
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':servicio_id' => $data['servicio_id'],
-                ':horarioBase_id' => $data['horarioBase_id'], // Cambio de nombre de campo
+                ':horarioBase_id' => $data['horarioBase_id'], 
                 ':is_obligatorio' => $data['is_obligatorio']
 
             ]);
@@ -51,7 +51,6 @@ class ServicioPorHorarioRepository
             $params[':estado'] = $data['estado'];
         }
 
-        // Cambio de nombre de campo de tipo_deporte_id a horarioBase_id
         if (isset($data['horarioBase_id'])) {
             $setClauses[] = "horarioBase_id = :horarioBase_id";
             $params[':horarioBase_id'] = $data['horarioBase_id'];
@@ -66,7 +65,6 @@ class ServicioPorHorarioRepository
             return false;
         }
 
-        // Cambio de nombre de tabla: ServicioPorDeporte -> ServicioPorHorario
         $sql = "UPDATE ServicioPorHorario 
                 SET " . implode(", ", $setClauses) . " 
                 WHERE id = :id";
@@ -109,16 +107,13 @@ class ServicioPorHorarioRepository
             WHERE SPH.servicio_id = :servicio_id
         ";
 
-        // Cambio de nombre de tabla: ServicioPorDeporte -> ServicioPorHorario
         $totalFrom = "SELECT COUNT(id) AS total FROM ServicioPorHorario WHERE servicio_id = :servicio_id";
 
-        // 1. Obtener Total (Lógica de conteo sin cambios)
         $totalStmt = $this->db->prepare($totalFrom);
         $totalStmt->bindParam(':servicio_id', $servicioId, PDO::PARAM_INT);
         $totalStmt->execute();
         $total = $totalStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        // 2. Obtener Datos (Lógica de datos sin cambios)
         $dataSql = $selectAndFrom . " ORDER BY SPH.id ASC LIMIT :limit OFFSET :offset";
         $dataStmt = $this->db->prepare($dataSql);
 
@@ -133,7 +128,6 @@ class ServicioPorHorarioRepository
 
     public function changeStatus(int $id): bool
     {
-        // Cambio de nombre de tabla: ServicioPorDeporte -> ServicioPorHorario
         $sql = "UPDATE ServicioPorHorario 
                 SET estado = CASE WHEN estado = 'activo' THEN 'inactivo' ELSE 'activo' END 
                 WHERE id = :id";
@@ -146,7 +140,6 @@ class ServicioPorHorarioRepository
     // --- DELETE (Desasignar horario del servicio) ---
     public function delete(int $id): bool
     {
-        // Cambio de nombre de tabla: ServicioPorDeporte -> ServicioPorHorario
         $sql = "DELETE FROM ServicioPorHorario WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);

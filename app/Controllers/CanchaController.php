@@ -1,20 +1,23 @@
 <?php
 namespace App\Controllers;
-
-use App\Services\CanchaService; // Asegúrate que tu Service use el nuevo Repo
+use App\Services\CanchaService;
+use App\Repositories\CanchaRepository;
+use App\Core\Helpers\ApiHelper;
 use Exception;
 
-class CanchaController
+class CanchaController extends ApiHelper
 {
     private $canchaService;
+    private CanchaRepository $repository;
 
     public function __construct()
     {
-        // Asumimos que CanchaService ya instancia CanchaRepository
+
         $this->canchaService = new CanchaService();
+        $this->repository = new CanchaRepository();
     }
 
-    // Helper para CORS y JSON
+
     private function jsonResponse($data, $code = 200) {
         header("Access-Control-Allow-Origin: *");
         header("Content-Type: application/json");
@@ -31,24 +34,22 @@ class CanchaController
 
         $input = json_decode(file_get_contents("php://input"), true);
         $complejoId = $input['complejo_id'] ?? null;
-        
-        // Validación estricta de ID
+
         if (!$complejoId) {
             echo json_encode(['data' => [], 'total' => 0]);
             return;
         }
 
         try {
-            // Parámetros opcionales
             $tipoDeporte = $input['tipo_deporte_id'] ?? null;
             $search = $input['searchTerm'] ?? '';
             $page = $input['page'] ?? 1;
             $limit = $input['limit'] ?? 10;
 
-            // Llamada al servicio
+
             $result = $this->canchaService->getByComplejoPaginated($complejoId, $tipoDeporte, $search, $page, $limit);
             
-            echo json_encode($result); // Devuelve { data: [...], total: N }
+            echo json_encode($result); 
 
         } catch (Exception $e) {
             http_response_code(500);
@@ -116,6 +117,22 @@ class CanchaController
             $this->jsonResponse(['message' => 'Eliminado']);
         } catch (Exception $e) {
             $this->jsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function show(int $id)
+    {
+        try {
+            $cancha = $this->repository->getByIdWithDetails($id);
+            
+            if (!$cancha) {
+                $this->sendError("Cancha no encontrada", 404);
+                return;
+            }
+
+            $this->sendResponse($cancha);
+        } catch (Exception $e) {
+            $this->sendError($e);
         }
     }
 }

@@ -58,13 +58,10 @@ class HorarioBaseComposite implements ComponenteReserva
                 $horaFin
             );
 
-            // Si una hoja detecta colisión → Composite retorna falso
             if (!$disponible) {
                 return false;
             }
         }
-
-        // Si ninguna hoja detectó colisiones → Disponible
         return true;
     }
 }

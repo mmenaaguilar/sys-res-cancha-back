@@ -7,14 +7,13 @@ use App\Services\ServicioPorHorarioService;
 use App\Core\Helpers\ApiHelper;
 use Exception;
 
-// Asumo que ApiHelper es tu BaseController
 class ServicioPorHorarioController extends ApiHelper
 {
-    private ServicioPorHorarioService $servicioPorHorarioService; // Cambio de propiedad
+    private ServicioPorHorarioService $servicioPorHorarioService;
 
     public function __construct()
     {
-        $this->servicioPorHorarioService = new ServicioPorHorarioService(); // Cambio de instanciación
+        $this->servicioPorHorarioService = new ServicioPorHorarioService(); 
     }
 
     // RUTA: POST /api/servicio-horarios
@@ -63,7 +62,6 @@ class ServicioPorHorarioController extends ApiHelper
             $page = max(1, (int)$page);
             $limit = max(1, (int)$limit);
 
-            // Llamada al método renombrado
             $list = $this->servicioPorHorarioService->getHorariosPaginatedByServicio($servicioId, $page, $limit);
             $this->sendResponse($list);
         } catch (Exception $e) {
@@ -77,10 +75,9 @@ class ServicioPorHorarioController extends ApiHelper
         $data = $this->initRequest('PUT');
 
         try {
-            // Llamada al método renombrado
             $updated = $this->servicioPorHorarioService->changeServicioPorHorarioStatus($id);
             $this->sendResponse([
-                'servicioHorario_id' => $id, // Cambio de nombre de clave
+                'servicioHorario_id' => $id,
                 'mensaje' => $updated ? 'Estado de asignación de horario cambiado.' : 'Error al cambiar estado.'
             ], 200);
         } catch (Exception $e) {

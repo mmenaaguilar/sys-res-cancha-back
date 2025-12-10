@@ -62,7 +62,10 @@ class ComplejoDeportivoFavoritoRepository
     public function listByUsuarioPaginated(?int $usuarioId, ?string $searchTerm, int $limit, int $offset): array
     {
         $baseSql = "FROM ComplejoDeportivoFavoritos f
-                    JOIN ComplejoDeportivo c ON f.complejo_id = c.complejo_id";
+                    JOIN ComplejoDeportivo c ON f.complejo_id = c.complejo_id
+                    LEFT JOIN Distrito d ON c.distrito_id = d.distrito_id
+                    LEFT JOIN Provincia p ON c.provincia_id = p.provincia_id
+                    LEFT JOIN Departamento dep ON c.departamento_id = dep.departamento_id";
 
         $whereClauses = [];
         $params = [];
@@ -73,31 +76,47 @@ class ComplejoDeportivoFavoritoRepository
         }
 
         if (!empty($searchTerm)) {
-            $whereClauses[] = "c.nombre LIKE :search";
+            $whereClauses[] = "(c.nombre LIKE :search OR c.direccion_detalle LIKE :search)";
             $params[':search'] = '%' . $searchTerm . '%';
         }
 
         $where = !empty($whereClauses) ? " WHERE " . implode(" AND ", $whereClauses) : "";
 
-        // Total
         $totalSql = "SELECT COUNT(*) AS total " . $baseSql . $where;
         $stmt = $this->db->prepare($totalSql);
-        $stmt->execute($params);
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val);
+        }
+        $stmt->execute();
         $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        // Datos
-        $dataSql = "SELECT f.favorito_id, f.usuario_id, f.complejo_id, f.fecha_agregado,
-                           c.nombre AS complejo_nombre, c.estado AS complejo_estado
+        $dataSql = "SELECT 
+                        f.favorito_id, 
+                        f.usuario_id, 
+                        f.complejo_id, 
+                        f.fecha_agregado,
+                        c.nombre,                
+                        c.nombre AS complejo_nombre, 
+                        c.url_imagen,             
+                        c.url_map,                
+                        c.direccion_detalle,     
+                        c.estado AS complejo_estado,
+                        d.nombre AS distrito_nombre,
+                        p.nombre AS provincia_nombre,
+                        dep.nombre AS departamento_nombre
+
                     " . $baseSql . $where . " 
                     ORDER BY f.fecha_agregado DESC
                     LIMIT :limit OFFSET :offset";
 
         $stmt = $this->db->prepare($dataSql);
-        foreach ($params as $key => &$val) {
-            $stmt->bindParam($key, $val);
+        
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val);
         }
-        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        
         $stmt->execute();
 
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -107,4 +126,5 @@ class ComplejoDeportivoFavoritoRepository
             'data' => $data
         ];
     }
+
 }
