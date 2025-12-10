@@ -29,7 +29,7 @@ class UsuarioService
         if (empty($data['correo']) || !filter_var($data['correo'], FILTER_VALIDATE_EMAIL)) {
             throw new Exception("El correo electrónico es requerido y debe ser válido.");
         }
-        // Telefono puede ser opcional (NULL), pero si se envía debe ser un string.
+
         if (!isset($data['telefono'])) {
             $data['telefono'] = null;
         }
@@ -81,15 +81,12 @@ class UsuarioService
             throw new Exception("ID de usuario inválido.", 400);
         }
 
-        // 1. Validar que el usuario existe antes de intentar la actualización
         if (!$this->usuarioRepository->getById($id)) {
             throw new Exception("Usuario no encontrado.", 404);
         }
 
-        // 2. Validar los datos de entrada
         $this->validateUpdateData($data);
 
-        // 3. Ejecutar la actualización
         return $this->usuarioRepository->update($id, $data);
     }
     public function getCreditosByUsuario(int $usuarioId): array
@@ -120,7 +117,6 @@ public function cambiarContrasena(int $usuarioId, string $contrasenaActual, stri
         throw new Exception("La nueva contraseña debe tener al menos 8 caracteres.", 400);
     }
 
-    // Obtener el hash ACTUAL de la base de datos
     $hashActual = $this->usuarioRepository->getContrasenaHash($usuarioId);
     if ($hashActual === null) {
         throw new Exception("No se pudo obtener la contraseña actual.", 500);
@@ -130,17 +126,14 @@ public function cambiarContrasena(int $usuarioId, string $contrasenaActual, stri
     error_log("DEBUG - Hash actual en BD: " . $hashActual);
     error_log("DEBUG - password_verify resultado: " . (password_verify($contrasenaActual, $hashActual) ? 'VERDADERO' : 'FALSO'));
 
-    // Verificar la contraseña actual
     if (!password_verify($contrasenaActual, $hashActual)) {
         throw new Exception("La contraseña actual es incorrecta.", 400);
     }
 
-    // Verificar que sea diferente
     if (password_verify($nuevaContrasena, $hashActual)) {
         throw new Exception("La nueva contraseña debe ser diferente a la actual.", 400);
     }
 
-    // Hashear y actualizar
     $nuevoHash = password_hash($nuevaContrasena, PASSWORD_DEFAULT);
     error_log("DEBUG - Nuevo hash generado: " . $nuevoHash);
     
