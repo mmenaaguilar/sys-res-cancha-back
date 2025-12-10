@@ -43,16 +43,16 @@ class ReservaRepository
 
         $where = !empty($whereClauses) ? " WHERE " . implode(" AND ", $whereClauses) : "";
 
+        // Para el total, contamos reservas únicas
         $totalSql = "SELECT COUNT(DISTINCT r.reserva_id) AS total " . $baseSql . $where;
         $stmt = $this->db->prepare($totalSql);
         foreach ($params as $key => $val) $stmt->bindValue($key, $val);
         $stmt->execute();
         $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        //  SELECT MAESTRO: Trae todo lo necesario para ambas vistas
-        // Agrupamos por reserva_id si es admin (para no repetir filas por horas), 
-        // o mostramos detalles si es usuario (para ver cada partido).
-        // En este caso, priorizamos mostrar el primer detalle disponible por reserva para la tabla general.
+        // SELECT MAESTRO: Corregido para cumplir con ONLY_FULL_GROUP_BY
+        // Agrupamos por los campos principales (Reserva, Usuario, Complejo)
+        // y usamos funciones de agregación para los detalles (rd.*, c.nombre, tp.nombre).
 
         $dataSql = "SELECT 
                         r.reserva_id, 
@@ -65,17 +65,30 @@ class ReservaRepository
                         u.correo,
                         u.telefono,
 
-                        rd.fecha,
-                        rd.hora_inicio,
-                        rd.hora_fin,
-                        rd.precio,
+                        -- Funciones de agregación para el detalle de la reserva (primer bloque)
+                        MIN(rd.fecha) AS fecha,
+                        MIN(rd.hora_inicio) AS hora_inicio,
+                        MAX(rd.hora_fin) AS hora_fin,
+                        SUM(rd.precio) AS subtotal_detalles, -- Sumamos los precios de todos los detalles
 
                         cd.nombre AS complejo_nombre,
-                        c.nombre AS cancha_nombre,
-                        tp.nombre AS deporte
+                        -- GROUP_CONCAT para listar todas las canchas y deportes asociados
+                        GROUP_CONCAT(DISTINCT c.nombre SEPARATOR ', ') AS cancha_nombre,
+                        GROUP_CONCAT(DISTINCT tp.nombre SEPARATOR ', ') AS deporte
                     " . $baseSql . $where . " 
-                    -- Agrupamos para evitar duplicados en la tabla de Admin si una reserva tiene 2 bloques separados
-                    GROUP BY r.reserva_id, rd.detalle_id 
+                    
+                    -- ** SOLUCIÓN al error 1055: Incluir todas las columnas no agregadas en el GROUP BY **
+                    GROUP BY 
+                        r.reserva_id, 
+                        r.estado, 
+                        r.total_pago, 
+                        r.metodo_pago_id, 
+                        r.fecha_creacion,
+                        u.nombre, 
+                        u.correo, 
+                        u.telefono,
+                        cd.nombre
+
                     ORDER BY r.fecha_creacion DESC
                     LIMIT :limit OFFSET :offset";
 
