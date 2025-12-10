@@ -44,7 +44,7 @@ class ServicioService
     // --- CREATE ---
     public function createServicio(array $data): int
     {
-        if (empty($data['complejo_id']) || empty($data['nombre']) || empty($data['monto']) || $data['monto'] <= 0) {
+        if (empty($data['complejo_id']) || empty($data['nombre']) || empty($data['monto'])) {
             throw new Exception("Datos de servicio incompletos o inválidos (complejo_id, nombre, monto).", 400);
         }
         return $this->servicioRepository->create($data);
