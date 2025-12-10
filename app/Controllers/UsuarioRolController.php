@@ -21,7 +21,7 @@ class UsuarioRolController extends ApiHelper
         $this->usuarioService = new UsuarioService();
         $this->rolService = new RolService();
     }
-    
+
 
     public function create()
     {
@@ -127,21 +127,21 @@ class UsuarioRolController extends ApiHelper
     {
         try {
             $data = $this->initRequest('POST');
-            
+
             if (empty($data['email']) || empty($data['complejo_id']) || empty($data['rol_id'])) {
                 throw new Exception("Faltan datos obligatorios (email, complejo, rol).");
             }
-    
+
             $id = $this->usuarioRolService->invitarGestor(
-                trim($data['email']), 
-                (int)$data['complejo_id'], 
+                trim($data['email']),
+                (int)$data['complejo_id'],
                 (int)$data['rol_id']
             );
-            
+
             $this->sendResponse(['usuarioRol_id' => $id, 'mensaje' => 'Usuario invitado con éxito.'], 201);
-        } catch (Exception $e) { 
+        } catch (Exception $e) {
             $code = strpos($e->getMessage(), 'no encontró') !== false ? 404 : 400;
-            $this->sendError($e, $code); 
+            $this->sendError($e, $code);
         }
     }
 }

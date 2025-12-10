@@ -33,7 +33,7 @@ class UsuarioRolService
             'estado' => 'activo'
         ]);
 
-            if ($complejoId <= 0) {
+        if ($complejoId <= 0) {
             throw new Exception("Error: ID de complejo inválido.");
         }
 
@@ -74,14 +74,11 @@ class UsuarioRolService
     {
         $total = $result['total'];
 
-        // Calcular total de páginas
         $totalPages = $limit > 0 ? ceil($total / $limit) : 0;
-        if ($total == 0) $totalPages = 1; // Si no hay datos, hay 1 página vacía.
+        if ($total == 0) $totalPages = 1;
 
-        // Asegurar que la página actual no es mayor al total de páginas
         $page = min($page, (int)$totalPages);
 
-        // Calcular next_page y prev_page
         $hasNextPage = $page < $totalPages;
         $hasPrevPage = $page > 1;
 
@@ -91,7 +88,7 @@ class UsuarioRolService
             'current_page' => $page,
             'last_page' => (int)$totalPages,
 
-            // ¡Nuevos campos booleanos!
+
             'next_page' => $hasNextPage,
             'prev_page' => $hasPrevPage,
 

@@ -33,7 +33,7 @@ class UsuarioRolRepository
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':uid' => $usuarioId, ':cid' => $complejoId, ':rid' => $rolId]);
         return (bool) $stmt->fetch();
-    }    
+    }
 
     public function getById(int $id): ?array
     {
@@ -49,36 +49,36 @@ class UsuarioRolRepository
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-public function getUsuarioRolesPaginatedByComplejo(?int $complejoId, ?string $searchTerm, int $limit, int $offset): array
-{
-    $baseSql = "FROM UsuarioRol ur
+    public function getUsuarioRolesPaginatedByComplejo(?int $complejoId, ?string $searchTerm, int $limit, int $offset): array
+    {
+        $baseSql = "FROM UsuarioRol ur
                 LEFT JOIN Roles r ON ur.rol_id = r.rol_id
                 LEFT JOIN Usuarios u ON ur.usuario_id = u.usuario_id
                 LEFT JOIN ComplejoDeportivo cd ON ur.complejo_id = cd.complejo_id";
 
-    $params = [];
-    $whereClauses = [];
+        $params = [];
+        $whereClauses = [];
 
-    if ($complejoId !== null) {
-        $whereClauses[] = "ur.complejo_id = :complejo_id";
-        $params[':complejo_id'] = $complejoId;
-    }
+        if ($complejoId !== null) {
+            $whereClauses[] = "ur.complejo_id = :complejo_id";
+            $params[':complejo_id'] = $complejoId;
+        }
 
-    if (!empty($searchTerm)) {
-        $whereClauses[] = "(u.nombre LIKE :search OR u.correo LIKE :search)";
-        $params[':search'] = "%{$searchTerm}%";
-    }
+        if (!empty($searchTerm)) {
+            $whereClauses[] = "(u.nombre LIKE :search OR u.correo LIKE :search)";
+            $params[':search'] = "%{$searchTerm}%";
+        }
 
-    $where = !empty($whereClauses) ? " WHERE " . implode(" AND ", $whereClauses) : "";
+        $where = !empty($whereClauses) ? " WHERE " . implode(" AND ", $whereClauses) : "";
 
-    $totalSql = "SELECT COUNT(ur.usuarioRol_id) AS total " . $baseSql . $where;
-    $totalStmt = $this->db->prepare($totalSql);
-    $totalStmt->execute($params);
-    $total = $totalStmt->fetch(\PDO::FETCH_ASSOC)['total'] ?? 0;
+        $totalSql = "SELECT COUNT(ur.usuarioRol_id) AS total " . $baseSql . $where;
+        $totalStmt = $this->db->prepare($totalSql);
+        $totalStmt->execute($params);
+        $total = $totalStmt->fetch(\PDO::FETCH_ASSOC)['total'] ?? 0;
 
-    // 2. Obtener DATOS
-    // Agregamos IFNULL para que no rompa el frontend si no encuentra nombre/rol
-    $dataSql = "SELECT 
+        // 2. Obtener DATOS
+        // Agregamos IFNULL para que no rompa el frontend si no encuentra nombre/rol
+        $dataSql = "SELECT 
                     ur.usuarioRol_id, 
                     IFNULL(u.nombre, 'Usuario Eliminado') AS usuario_nombre, 
                     IFNULL(u.correo, 'Sin correo') AS correo, 
@@ -92,22 +92,22 @@ public function getUsuarioRolesPaginatedByComplejo(?int $complejoId, ?string $se
                 ORDER BY ur.usuarioRol_id DESC 
                 LIMIT :limit OFFSET :offset";
 
-    $dataStmt = $this->db->prepare($dataSql);
-    foreach ($params as $key => &$val) {
-        $dataStmt->bindParam($key, $val);
+        $dataStmt = $this->db->prepare($dataSql);
+        foreach ($params as $key => &$val) {
+            $dataStmt->bindParam($key, $val);
+        }
+        $dataStmt->bindParam(':limit', $limit, \PDO::PARAM_INT);
+        $dataStmt->bindParam(':offset', $offset, \PDO::PARAM_INT);
+        $dataStmt->execute();
+
+        $data = $dataStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // DEBUG: Si esto está vacío, es que los parámetros no coinciden
+        return [
+            'total' => (int)$total,
+            'data' => $data
+        ];
     }
-    $dataStmt->bindParam(':limit', $limit, \PDO::PARAM_INT);
-    $dataStmt->bindParam(':offset', $offset, \PDO::PARAM_INT);
-    $dataStmt->execute();
-
-    $data = $dataStmt->fetchAll(\PDO::FETCH_ASSOC);
-
-    // DEBUG: Si esto está vacío, es que los parámetros no coinciden
-    return [
-        'total' => (int)$total,
-        'data' => $data
-    ];
-}
     public function create(array $data): int
     {
         $sql = "INSERT INTO UsuarioRol (usuario_id, rol_id, complejo_id, estado) 
