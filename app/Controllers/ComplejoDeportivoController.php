@@ -40,11 +40,14 @@ class ComplejoDeportivoController extends ApiHelper
                 $this->sendError(new Exception("El usuario es requerido."), 400);
                 return;
             }
+            // Aseguramos que usuarioId es un entero o null
             $usuarioId = (empty($usuarioId) || !is_numeric($usuarioId)) ? null : (int)$usuarioId;
             $page = max(1, (int)$page);
             $limit = max(1, (int)$limit);
 
-            $complejos = $this->service->getAll($usuarioId, $searchTerm, $page, $limit);
+            // ** LÍNEA CRÍTICA 47: CORREGIDA AL NUEVO ORDEN DEL SERVICE **
+            // DEBE SER: $page, $limit, $usuarioId, $searchTerm
+            $complejos = $this->service->getAll($page, $limit, $usuarioId, $searchTerm);
             $this->sendResponse($complejos);
         } catch (Exception $e) {
             $this->sendError($e);
