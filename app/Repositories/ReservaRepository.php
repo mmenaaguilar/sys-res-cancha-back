@@ -14,7 +14,7 @@ class ReservaRepository
         $this->db = Database::getConnection();
     }
 
-public function getReservasPaginated(?int $usuarioId, ?int $complejoId, ?string $searchTerm, int $limit, int $offset): array
+    public function getReservasPaginated(?int $usuarioId, ?int $complejoId, ?string $searchTerm, int $limit, int $offset): array
     {
         $baseSql = "FROM Reserva r
                     JOIN Usuarios u ON r.usuario_id = u.usuario_id
@@ -53,7 +53,7 @@ public function getReservasPaginated(?int $usuarioId, ?int $complejoId, ?string 
         // Agrupamos por reserva_id si es admin (para no repetir filas por horas), 
         // o mostramos detalles si es usuario (para ver cada partido).
         // En este caso, priorizamos mostrar el primer detalle disponible por reserva para la tabla general.
-        
+
         $dataSql = "SELECT 
                         r.reserva_id, 
                         r.estado,
@@ -85,7 +85,7 @@ public function getReservasPaginated(?int $usuarioId, ?int $complejoId, ?string 
         }
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        
+
         $stmt->execute();
 
         return [

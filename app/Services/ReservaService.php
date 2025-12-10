@@ -89,10 +89,10 @@ class ReservaService
         // 3. Calcular horas disponibles usando los datos del DETALLE
         $fechaHoraInicio = new \DateTime($detallePrincipal['fecha'] . ' ' . $detallePrincipal['hora_inicio']);
         $ahora = new \DateTime();
-         
+
         // Comparar
         if ($fechaHoraInicio < $ahora) {
-             throw new Exception("No se puede cancelar una reserva pasada.");
+            throw new Exception("No se puede cancelar una reserva pasada.");
         }
 
         $diff = $ahora->diff($fechaHoraInicio);
@@ -131,7 +131,7 @@ class ReservaService
             default:
                 // Si la estrategia no está definida en código, procedemos a cancelar simple
                 $this->reservaRepo->cancelarReserva($id);
-                 return ['mensaje' => 'Estrategia desconocida, cancelación forzada realizada.'];
+                return ['mensaje' => 'Estrategia desconocida, cancelación forzada realizada.'];
         }
 
         // Ejecutar estrategia (reembolsos, movimientos de saldo, etc.)
@@ -146,8 +146,8 @@ class ReservaService
             'horas_disponibles' => $horasDisponibles
         ];
     }
-    
-public function crearReserva(array $data): array
+
+    public function crearReserva(array $data): array
     {
         if (empty($data['usuario_id']) || empty($data['metodo_pago_id']) || empty($data['detalles'])) {
             throw new Exception("Datos incompletos para crear reserva.", 400);
@@ -172,7 +172,7 @@ public function crearReserva(array $data): array
             $descuentoAplicable = min($subtotal, $montoCredito);
             $totalPagarReal = $subtotal - $descuentoAplicable;
         }
-        
+
         // Evitar negativos o errores de punto flotante pequeños
         $totalPagarReal = max(0, round($totalPagarReal, 2));
 
@@ -186,7 +186,7 @@ public function crearReserva(array $data): array
 
         // 4. Lógica de Agrupación (Merge)
         $detallesOriginales = $data['detalles'];
-        usort($detallesOriginales, function($a, $b) {
+        usort($detallesOriginales, function ($a, $b) {
             return strcmp($a['hora_inicio'], $b['hora_inicio']);
         });
 
@@ -221,7 +221,7 @@ public function crearReserva(array $data): array
 
             // 6. Crear Detalles (APLICANDO EL FACTOR DE DESCUENTO)
             foreach ($detallesAgrupados as $d) {
-                
+
                 // Aquí aplicamos el descuento a cada item individualmente
                 $precioOriginalItem = floatval($d['precio']);
                 $precioConDescuentoItem = $precioOriginalItem * $factorDescuento;
@@ -232,10 +232,10 @@ public function crearReserva(array $data): array
                     'hora_inicio' => $d['hora_inicio'],
                     'hora_fin'    => $d['hora_fin'],
                     // Guardamos el precio reducido en el detalle también
-                    'precio'      => round($precioConDescuentoItem, 2) 
+                    'precio'      => round($precioConDescuentoItem, 2)
                 ]);
             }
-            
+
             // 7. Actualizar estado del crédito
             if ($creditoId) {
                 $this->creditoRepo->changeStatus((int)$creditoId, 'usado');
@@ -248,7 +248,6 @@ public function crearReserva(array $data): array
                 'total'      => $totalPagarReal,
                 'mensaje'    => 'Reserva creada con éxito.'
             ];
-
         } catch (Exception $e) {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
