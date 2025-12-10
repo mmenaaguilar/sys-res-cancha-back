@@ -153,38 +153,52 @@ public function crearReserva(array $data): array
             throw new Exception("Datos incompletos para crear reserva.", 400);
         }
 
-        // 0.1 Obtener el ID de crédito si existe y validar que no sea nulo o -1
+        // 0. Datos del crédito
         $creditoId = $data['credito_id'] ?? null;
-        if ($creditoId === '0' && ($creditoId === 'null' || $creditoId === '-1' || $creditoId === null)) {
+        if ($creditoId === '0' || $creditoId === 'null' || $creditoId === '-1' || $creditoId === 0) {
             $creditoId = null;
         }
+        $montoCredito = isset($data['monto_credito']) ? floatval($data['monto_credito']) : 0;
 
-        // 1. Calcular Total y Preparar Datos
-        $total = 0;
+        // 1. Calcular Subtotal (Precio Original)
+        $subtotal = 0;
         foreach ($data['detalles'] as $d) {
-            $total += $d['precio'];
+            $subtotal += $d['precio'];
         }
 
-        // ✅ 2. LÓGICA DE AGRUPACIÓN (MERGE) DE HORARIOS CONSECUTIVOS (Mantenida)
-        $detallesOriginales = $data['detalles'];
+        // 2. Calcular Total Final Real (Aplicando descuento)
+        $totalPagarReal = $subtotal;
+        if ($creditoId && $montoCredito > 0) {
+            $descuentoAplicable = min($subtotal, $montoCredito);
+            $totalPagarReal = $subtotal - $descuentoAplicable;
+        }
         
-        // A. Ordenar por hora de inicio para asegurar continuidad
+        // Evitar negativos o errores de punto flotante pequeños
+        $totalPagarReal = max(0, round($totalPagarReal, 2));
+
+        // -----------------------------------------------------------
+        // 3. CALCULAR FACTOR DE PRORRATEO
+        // Esto sirve para reducir proporcionalmente el precio de cada detalle
+        // Si el subtotal era 100 y pagan 80, el factor es 0.8
+        // -----------------------------------------------------------
+        $factorDescuento = ($subtotal > 0) ? ($totalPagarReal / $subtotal) : 1;
+
+
+        // 4. Lógica de Agrupación (Merge)
+        $detallesOriginales = $data['detalles'];
         usort($detallesOriginales, function($a, $b) {
             return strcmp($a['hora_inicio'], $b['hora_inicio']);
         });
 
         $detallesAgrupados = [];
-        
         foreach ($detallesOriginales as $slot) {
             if (empty($detallesAgrupados)) {
                 $detallesAgrupados[] = $slot;
                 continue;
             }
-
             $ultimoIndex = count($detallesAgrupados) - 1;
             $ultimoSlot = &$detallesAgrupados[$ultimoIndex];
 
-            // B. Verificar continuidad
             if ($ultimoSlot['hora_fin'] === $slot['hora_inicio']) {
                 $ultimoSlot['hora_fin'] = $slot['hora_fin'];
                 $ultimoSlot['precio'] += $slot['precio'];
@@ -192,32 +206,37 @@ public function crearReserva(array $data): array
                 $detallesAgrupados[] = $slot;
             }
         }
-        // ---------------------------------------------------------
 
         try {
             $this->db->beginTransaction();
 
-            // 3. Crear Cabecera
+            // 5. Crear Cabecera (Reserva)
             $reservaId = $this->reservaRepo->createReserva([
-                'usuario_id'  => $data['usuario_id'],
+                'usuario_id'     => $data['usuario_id'],
                 'metodo_pago_id' => $data['metodo_pago_id'],
-                'total_pago'  => $total,
-                'estado' => 'confirmada',
-                'fecha_pago' => date('Y-m-d H:i:s')
+                'total_pago'     => $totalPagarReal, // Precio ya descontado
+                'estado'         => 'confirmada',
+                'fecha_pago'     => date('Y-m-d H:i:s')
             ]);
 
-            // 4. Crear Detalles (Usando la lista AGRUPADA)
+            // 6. Crear Detalles (APLICANDO EL FACTOR DE DESCUENTO)
             foreach ($detallesAgrupados as $d) {
+                
+                // Aquí aplicamos el descuento a cada item individualmente
+                $precioOriginalItem = floatval($d['precio']);
+                $precioConDescuentoItem = $precioOriginalItem * $factorDescuento;
+
                 $this->reservaRepo->addDetalle($reservaId, [
-                    'cancha_id' => $data['cancha_id'],
-                    'fecha'  => $data['fecha_reserva'],
+                    'cancha_id'   => $data['cancha_id'],
+                    'fecha'       => $data['fecha_reserva'],
                     'hora_inicio' => $d['hora_inicio'],
-                    'hora_fin' => $d['hora_fin'],
-                    'precio' => $d['precio']
+                    'hora_fin'    => $d['hora_fin'],
+                    // Guardamos el precio reducido en el detalle también
+                    'precio'      => round($precioConDescuentoItem, 2) 
                 ]);
             }
             
-            // 5. 🚨 LÓGICA DE CRÉDITO: Marcar el crédito como 'usado' si se utilizó
+            // 7. Actualizar estado del crédito
             if ($creditoId) {
                 $this->creditoRepo->changeStatus((int)$creditoId, 'usado');
             }
@@ -226,8 +245,8 @@ public function crearReserva(array $data): array
 
             return [
                 'reserva_id' => $reservaId,
-                'total' => $total,
-                'mensaje' => 'Reserva creada (Confirmada).'
+                'total'      => $totalPagarReal,
+                'mensaje'    => 'Reserva creada con éxito.'
             ];
 
         } catch (Exception $e) {
