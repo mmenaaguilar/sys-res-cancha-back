@@ -46,7 +46,10 @@ class ComplejoDeportivoService
             'data' => $result['data']
         ];
     }
-    public function getAll(?int $usaurioId = null, ?string $searchTerm, int $page, int $limit): array
+
+    // ** CORRECCIÓN APLICADA AQUÍ (Línea 49 Original) **
+    // Reordenando los parámetros para poner los obligatorios primero
+    public function getAll(int $page, int $limit, ?int $usaurioId = null, ?string $searchTerm = null): array
     {
         $page = max(1, $page);
         $offset = ($page - 1) * $limit;
