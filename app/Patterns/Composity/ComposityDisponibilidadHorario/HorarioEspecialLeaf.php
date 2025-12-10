@@ -51,7 +51,7 @@ class HorarioEspecialLeaf implements ComponenteReserva
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
             $count = (int)$stmt->fetchColumn();
-            return $count === 0; // True si está libre
+            return $count === 0; 
         } catch (Exception $e) {
             error_log("Error en HorarioEspecialLeaf: " . $e->getMessage());
             return false;

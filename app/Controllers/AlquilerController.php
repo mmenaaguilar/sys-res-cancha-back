@@ -2,8 +2,8 @@
 
 namespace App\Controllers;
 
-use App\Patterns\AlquilerFacade;                 // <-- Ruta ajustada
-use App\Patterns\Reserva\HorarioBaseComposite;  // <-- Mantiene el namespace del composite
+use App\Patterns\AlquilerFacade;                 
+use App\Patterns\Reserva\HorarioBaseComposite;  
 use App\Core\Helpers\ApiHelper;
 
 class AlquilerController extends ApiHelper
@@ -12,37 +12,21 @@ class AlquilerController extends ApiHelper
 
     public function __construct()
     {
-        // Inyectamos el composite dentro del Facade
         $this->facade = new AlquilerFacade();
     }
 
-    public function validarDisponibilidad()
-    {
-        // Obtener el JSON enviado desde el frontend
-        $data = json_decode(file_get_contents('php://input'), true) ?? [];
-
-        // Llamar al Facade
-        $response = $this->facade->validarDisponibilidad($data);
-
-        // Devolver respuesta en JSON
-        header('Content-Type: application/json');
-        echo json_encode($response);
-    }
     public function buscarComplejosDisponiblesPorDistrito()
     {
-        // Obtener los datos enviados en el body POST
         $data = json_decode(file_get_contents("php://input"), true);
 
-        // Crear el facade y llamar al método
         $facade = new AlquilerFacade();
         $resultado = $facade->buscarComplejosDisponiblesPorDistrito($data);
 
-        // Devolver JSON
         header('Content-Type: application/json');
         echo json_encode($resultado);
     }
 
-        public function verAgenda()
+        public function validarDisponibilidad()
     {
         $data = json_decode(file_get_contents('php://input'), true);
         $canchaId = $data['cancha_id'] ?? 0;
@@ -54,10 +38,7 @@ class AlquilerController extends ApiHelper
         }
 
         try {
-            $grilla = $this->facade->obtenerGrillaPorCancha($canchaId, $fecha);
-            
-            // Enviamos info extra de la cancha también para el header
-            // (Opcional si ya la tienes, pero útil)
+            $grilla = $this->facade->validarDisponibilidad($canchaId, $fecha);
             
             $this->sendResponse([
                 'fecha' => $fecha,

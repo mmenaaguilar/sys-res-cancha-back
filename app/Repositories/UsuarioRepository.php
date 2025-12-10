@@ -90,7 +90,6 @@ class UsuarioRepository
             ]);
             return $stmt->rowCount() > 0;
         } catch (PDOException $e) {
-            // Manejar error de clave única si el correo ya existe (código 23000)
             if ($e->getCode() === '23000') {
                 throw new Exception("El correo electrónico ya está registrado.", 409);
             }
@@ -100,12 +99,12 @@ class UsuarioRepository
 
     public function getContrasenaHash(int $usuarioId): ?string
     {
-        $sql = "SELECT contrasena FROM Usuarios WHERE usuario_id = :usuario_id"; // ✅ contrasena
+        $sql = "SELECT contrasena FROM Usuarios WHERE usuario_id = :usuario_id"; 
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(':usuario_id', $usuarioId, PDO::PARAM_INT);
         $stmt->execute();
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result ? $result['contrasena'] : null; // ✅ contrasena
+        return $result ? $result['contrasena'] : null; 
     }
 
     /**

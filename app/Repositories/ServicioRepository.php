@@ -44,7 +44,6 @@ class ServicioRepository
         $whereClauses = [];
         $params = [];
 
-        // Filtro MANDATORIO por complejo_id
         if ($complejoId !== null) {
             $whereClauses[] = "complejo_id = :complejo_id";
             $params[':complejo_id'] = $complejoId;
@@ -52,7 +51,6 @@ class ServicioRepository
             return ['total' => 0, 'data' => []];
         }
 
-        // Filtro opcional por término de búsqueda (nombre o descripción)
         if (!empty($searchTerm)) {
             $whereClauses[] = "(nombre LIKE :search_term OR descripcion LIKE :search_term)";
             $params[':search_term'] = '%' . $searchTerm . '%';
@@ -63,7 +61,6 @@ class ServicioRepository
         $dataSql = $selectAndFrom . $whereSql . " ORDER BY nombre ASC LIMIT :limit OFFSET :offset";
         $totalSql = $totalFrom . $whereSql;
 
-        // 1. Obtener Total
         $totalStmt = $this->db->prepare($totalSql);
         foreach ($params as $key => $value) {
             $totalStmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
@@ -71,7 +68,6 @@ class ServicioRepository
         $totalStmt->execute();
         $total = $totalStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        // 2. Obtener Datos
         $dataStmt = $this->db->prepare($dataSql);
         foreach ($params as $key => $value) {
             $dataStmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);

@@ -12,12 +12,12 @@ class CanchaController extends ApiHelper
 
     public function __construct()
     {
-        // Asumimos que CanchaService ya instancia CanchaRepository
+
         $this->canchaService = new CanchaService();
         $this->repository = new CanchaRepository();
     }
 
-    // Helper para CORS y JSON
+
     private function jsonResponse($data, $code = 200) {
         header("Access-Control-Allow-Origin: *");
         header("Content-Type: application/json");
@@ -34,24 +34,22 @@ class CanchaController extends ApiHelper
 
         $input = json_decode(file_get_contents("php://input"), true);
         $complejoId = $input['complejo_id'] ?? null;
-        
-        // Validación estricta de ID
+
         if (!$complejoId) {
             echo json_encode(['data' => [], 'total' => 0]);
             return;
         }
 
         try {
-            // Parámetros opcionales
             $tipoDeporte = $input['tipo_deporte_id'] ?? null;
             $search = $input['searchTerm'] ?? '';
             $page = $input['page'] ?? 1;
             $limit = $input['limit'] ?? 10;
 
-            // Llamada al servicio
+
             $result = $this->canchaService->getByComplejoPaginated($complejoId, $tipoDeporte, $search, $page, $limit);
             
-            echo json_encode($result); // Devuelve { data: [...], total: N }
+            echo json_encode($result); 
 
         } catch (Exception $e) {
             http_response_code(500);

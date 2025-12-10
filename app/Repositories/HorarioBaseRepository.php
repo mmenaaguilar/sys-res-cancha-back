@@ -117,7 +117,6 @@ class HorarioBaseRepository
             return null;
         }
 
-        // 2. Consultar si existen servicios obligatorios asociados a este horario
         $sqlServicio = "SELECT S.monto 
                     FROM ServicioPorHorario SPH
                     JOIN Servicios S ON SPH.servicio_id = S.servicio_id
@@ -133,7 +132,6 @@ class HorarioBaseRepository
 
         $servicios = $stmtServicio->fetchAll(PDO::FETCH_ASSOC);
 
-        // 3. Sumar los montos de los servicios obligatorios
         $montoAdicional = 0;
         foreach ($servicios as $servicio) {
             $montoAdicional += (float) $servicio['monto'];

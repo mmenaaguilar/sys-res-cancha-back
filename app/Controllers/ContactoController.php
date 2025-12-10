@@ -30,7 +30,6 @@ class ContactoController extends ApiHelper
         $limit = $data['limit'] ?? 10;
 
         try {
-            // Saneamiento de parámetros
             $complejoId = (empty($complejoId) || !is_numeric($complejoId) || $complejoId <= 0) ? null : (int)$complejoId;
             $page = max(1, (int)$page);
             $limit = max(1, (int)$limit);

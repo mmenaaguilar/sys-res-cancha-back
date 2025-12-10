@@ -58,7 +58,6 @@ class ComplejoDeportivoRepository
 
         $params = [];
 
-        // Lógica de cascada: Filtramos por el nivel más específico disponible
         if ($distId > 0) {
             $sql .= " AND cd.distrito_id = :dist";
             $params[':dist'] = $distId;
@@ -69,7 +68,6 @@ class ComplejoDeportivoRepository
             $sql .= " AND cd.departamento_id = :dep";
             $params[':dep'] = $depId;
         }
-        // Si no se envía nada, devuelve todos los activos (o podrías limitarlo)
 
         $sql .= " ORDER BY cd.nombre ASC";
 
@@ -81,14 +79,13 @@ class ComplejoDeportivoRepository
 
       public function getAll(?int $usuarioId, ?string $searchTerm, int $limit, int $offset): array
     {
-        // 1. Agregamos 'ur.rol_id AS mi_rol' al SELECT
         $sql = "SELECT DISTINCT 
                         c.*, 
                         d.nombre AS distrito_nombre, 
                         p.nombre AS provincia_nombre,
                         dep.nombre AS departamento_nombre,
                         CONCAT(IFNULL(d.nombre,''), ', ', IFNULL(p.nombre,'')) AS ubicacion_completa,
-                        ur.rol_id AS mi_rol  /* <--- ESTO ES CRÍTICO PARA LA SEGURIDAD FRONTEND */
+                        ur.rol_id AS mi_rol  
                 FROM ComplejoDeportivo c
                 LEFT JOIN Distrito d ON c.distrito_id = d.distrito_id
                 LEFT JOIN Provincia p ON c.provincia_id = p.provincia_id
@@ -119,7 +116,6 @@ class ComplejoDeportivoRepository
         $stmt->execute();
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Conteo total (sin cambios)
         $countSql = "SELECT COUNT(DISTINCT c.complejo_id) as total 
                      FROM ComplejoDeportivo c 
                      LEFT JOIN UsuarioRol ur ON c.complejo_id = ur.complejo_id 
@@ -139,7 +135,6 @@ class ComplejoDeportivoRepository
 
   public function create(array $data): int
     {
-        // CORRECCIÓN: Agregamos url_imagen a la lista de columnas del INSERT
         $sql = "INSERT INTO ComplejoDeportivo 
                 (nombre, departamento_id, provincia_id, distrito_id, direccion_detalle, url_imagen, url_map, descripcion, estado)
                 VALUES (:nombre, :departamento_id, :provincia_id, :distrito_id, :direccion_detalle, :url_imagen, :url_map, :descripcion, :estado)";
@@ -149,14 +144,13 @@ class ComplejoDeportivoRepository
             $stmt = $this->db->prepare($sql);
 
             $stmt->bindValue(':nombre', $data['nombre']);
-            // Convertir IDs a INT o NULL
+
             $stmt->bindValue(':departamento_id', !empty($data['departamento_id']) ? $data['departamento_id'] : null, PDO::PARAM_INT);
             $stmt->bindValue(':provincia_id', !empty($data['provincia_id']) ? $data['provincia_id'] : null, PDO::PARAM_INT);
             $stmt->bindValue(':distrito_id', !empty($data['distrito_id']) ? $data['distrito_id'] : null, PDO::PARAM_INT);
             
             $stmt->bindValue(':direccion_detalle', $data['direccion_detalle']);
             
-            // ✅ BINDING DE IMAGEN (Si viene null del Service, se enlaza como PDO::PARAM_NULL)
             $urlImagen = $data['url_imagen'] ?? null;
             $urlMap = $data['url_map'] ?? null;
             $descripcion = $data['descripcion'] ?? null;
@@ -179,7 +173,6 @@ class ComplejoDeportivoRepository
         }
     }
 
-    // ✅ CORRECCIÓN 2: UPDATE (Asegurar que url_imagen y url_map se actualicen)
   public function update(int $id, array $data): bool
     {
         $sql = "UPDATE ComplejoDeportivo
@@ -188,7 +181,7 @@ class ComplejoDeportivoRepository
                     provincia_id = :provincia_id,
                     distrito_id = :distrito_id,
                     direccion_detalle = :direccion_detalle,
-                    url_imagen = :url_imagen, /* Agregado */
+                    url_imagen = :url_imagen, 
                     url_map = :url_map,
                     descripcion = :descripcion,
                     estado = :estado
@@ -197,23 +190,19 @@ class ComplejoDeportivoRepository
         try {
             $stmt = $this->db->prepare($sql);
             
-            // --- PREPARACIÓN DE VALORES SEGUROS ---
             $urlImagen = $data['url_imagen'] ?? null; 
             $urlMap = $data['url_map'] ?? null;
             $descripcion = $data['descripcion'] ?? null;
             $estado = $data['estado'] ?? 'activo';
             
-            // --- BINDING SEGURO con bindValue ---
             $stmt->bindValue(':nombre', $data['nombre']);
             
-            // IDs de Ubicación (convertir a NULL si está vacío)
             $stmt->bindValue(':departamento_id', !empty($data['departamento_id']) ? $data['departamento_id'] : null, PDO::PARAM_INT);
             $stmt->bindValue(':provincia_id', !empty($data['provincia_id']) ? $data['provincia_id'] : null, PDO::PARAM_INT);
             $stmt->bindValue(':distrito_id', !empty($data['distrito_id']) ? $data['distrito_id'] : null, PDO::PARAM_INT);
             
             $stmt->bindValue(':direccion_detalle', $data['direccion_detalle'] ?? '');
             
-            // ✅ CORRECCIÓN: BINDING DE URL_IMAGEN (El valor que viene del Service ya es la URL vieja si no se subió archivo)
             $stmt->bindValue(':url_imagen', $urlImagen, is_null($urlImagen) ? PDO::PARAM_NULL : PDO::PARAM_STR);
             
             $stmt->bindValue(':url_map', $urlMap, is_null($urlMap) ? PDO::PARAM_NULL : PDO::PARAM_STR);
@@ -224,7 +213,6 @@ class ComplejoDeportivoRepository
 
             return $stmt->execute();
         } catch (\PDOException $e) {
-            // Este catch es vital para que devuelva JSON con el error SQL
             throw new Exception("Error SQL al actualizar: " . $e->getMessage());
         }
     }

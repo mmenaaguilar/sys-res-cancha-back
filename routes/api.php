@@ -60,7 +60,7 @@ $router->post('/api/usuarios/creditos', 'UsuarioController@getCreditos');
 $router->post('/api/usuarios/cambiar-contrasena', 'UsuarioController@cambiarContrasena');
 
 // RUTA PARA VALIDAR DISPONIBILIDAD
-$router->post('/api/alquiler/validar-disponibilidad', 'AlquilerController@validarDisponibilidad');
+$router->post('/api/alquiler/agenda', 'AlquilerController@validarDisponibilidad');
 // Listar complejos disponibles por distrito
 $router->post('/api/alquiler/buscar-complejos-disponibles', 'AlquilerController@buscarComplejosDisponiblesPorDistrito');
 
@@ -115,8 +115,6 @@ $router->delete('/api/gestores/{id}', 'UsuarioRolController@delete');
 $router->get('/api/complejos/ubicaciones-activas', 'ComplejoDeportivoController@getUbicaciones');
 
 $router->get('/api/complejo-publico/{id}', 'ComplejoDeportivoController@show');
-
-$router->post('/api/alquiler/agenda', 'AlquilerController@verAgenda');
 
 $router->get('/api/canchas/{id}', 'CanchaController@show');
 $router->get('/api/metodos-pago', 'MetodoPagoController@list');

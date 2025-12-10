@@ -131,9 +131,7 @@ class UsuarioRolController extends ApiHelper
             if (empty($data['email']) || empty($data['complejo_id']) || empty($data['rol_id'])) {
                 throw new Exception("Faltan datos obligatorios (email, complejo, rol).");
             }
-            
-            // Usamos el servicio invitarGestor que ya definiste en UsuarioRolService
-            // (Asegúrate de que ese método exista en tu Service, como vimos anteriormente)
+    
             $id = $this->usuarioRolService->invitarGestor(
                 trim($data['email']), 
                 (int)$data['complejo_id'], 
@@ -142,7 +140,6 @@ class UsuarioRolController extends ApiHelper
             
             $this->sendResponse(['usuarioRol_id' => $id, 'mensaje' => 'Usuario invitado con éxito.'], 201);
         } catch (Exception $e) { 
-            // Si es error de usuario no encontrado, mandamos 404 para que el front sepa
             $code = strpos($e->getMessage(), 'no encontró') !== false ? 404 : 400;
             $this->sendError($e, $code); 
         }

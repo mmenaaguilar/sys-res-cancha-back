@@ -16,8 +16,6 @@ class ReservaRepository
 
 public function getReservasPaginated(?int $usuarioId, ?int $complejoId, ?string $searchTerm, int $limit, int $offset): array
     {
-        // ✅ JOIN COMPLETO: Une Reserva + Usuario + Detalle + Cancha + Complejo + Deporte
-        // Usamos LEFT JOIN en Detalle por si acaso existe una reserva corrupta sin detalles, que igual aparezca al admin para borrarla.
         $baseSql = "FROM Reserva r
                     JOIN Usuarios u ON r.usuario_id = u.usuario_id
                     LEFT JOIN ReservaDetalle rd ON rd.reserva_id = r.reserva_id
@@ -28,19 +26,16 @@ public function getReservasPaginated(?int $usuarioId, ?int $complejoId, ?string 
         $whereClauses = [];
         $params = [];
 
-        // Filtro por Usuario (Vista Mis Reservas)
         if ($usuarioId !== null) {
             $whereClauses[] = "r.usuario_id = :usuario_id";
             $params[':usuario_id'] = $usuarioId;
         }
 
-        // Filtro por Complejo (Vista Admin)
         if ($complejoId !== null) {
             $whereClauses[] = "c.complejo_id = :complejo_id";
             $params[':complejo_id'] = $complejoId;
         }
 
-        // Buscador Global
         if (!empty($searchTerm)) {
             $whereClauses[] = "(u.nombre LIKE :search OR u.correo LIKE :search OR cd.nombre LIKE :search OR c.nombre LIKE :search)";
             $params[':search'] = '%' . $searchTerm . '%';
@@ -48,14 +43,13 @@ public function getReservasPaginated(?int $usuarioId, ?int $complejoId, ?string 
 
         $where = !empty($whereClauses) ? " WHERE " . implode(" AND ", $whereClauses) : "";
 
-        // Total
         $totalSql = "SELECT COUNT(DISTINCT r.reserva_id) AS total " . $baseSql . $where;
         $stmt = $this->db->prepare($totalSql);
         foreach ($params as $key => $val) $stmt->bindValue($key, $val);
         $stmt->execute();
         $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        // ✅ SELECT MAESTRO: Trae todo lo necesario para ambas vistas
+        //  SELECT MAESTRO: Trae todo lo necesario para ambas vistas
         // Agrupamos por reserva_id si es admin (para no repetir filas por horas), 
         // o mostramos detalles si es usuario (para ver cada partido).
         // En este caso, priorizamos mostrar el primer detalle disponible por reserva para la tabla general.
@@ -67,18 +61,15 @@ public function getReservasPaginated(?int $usuarioId, ?int $complejoId, ?string 
                         r.metodo_pago_id,
                         r.fecha_creacion,
                         
-                        -- Datos del Usuario (Para Admin)
                         u.nombre AS usuario_nombre,
                         u.correo,
                         u.telefono,
 
-                        -- Datos del Detalle (Para Cliente)
                         rd.fecha,
                         rd.hora_inicio,
                         rd.hora_fin,
                         rd.precio,
 
-                        -- Datos Visuales (Para ambos)
                         cd.nombre AS complejo_nombre,
                         c.nombre AS cancha_nombre,
                         tp.nombre AS deporte
@@ -112,7 +103,6 @@ public function getReservasPaginated(?int $usuarioId, ?int $complejoId, ?string 
         $stmt->execute();
         $total = $stmt->fetch(\PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        // 2. Data con JOIN corregido a ComplejoDeportivo
         $dataSql = "SELECT 
                         rd.detalle_id, 
                         rd.reserva_id, 

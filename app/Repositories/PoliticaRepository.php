@@ -57,7 +57,6 @@ class PoliticaRepository
             ]);
             return (int) $this->db->lastInsertId();
         } catch (PDOException  $e) {
-            // Manejo de error de clave única para la restricción global
             if ($e->getCode() === '23000') {
                 throw new PDOException("Error de clave única: La estrategia temprana '{$data['estrategia_temprana']}' ya está siendo utilizada globalmente por otra política.", 409);
             }

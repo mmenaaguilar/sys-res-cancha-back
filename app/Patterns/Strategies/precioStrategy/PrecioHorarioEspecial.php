@@ -17,7 +17,7 @@ class PrecioHorarioEspecial implements PrecioStrategy
     {
         $horarioEspecial = $this->horarioEspecialRepo->getDisponibleByCanchaYFecha(
             $canchaId,
-            $fecha, // ya es string
+            $fecha, 
             $horaInicio,
             $horaFin
         );
@@ -26,6 +26,6 @@ class PrecioHorarioEspecial implements PrecioStrategy
             return (float)$horarioEspecial['monto'];
         }
 
-        return -1; // No hay HorarioEspecial disponible
+        return -1; 
     }
 }

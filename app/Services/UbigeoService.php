@@ -39,9 +39,7 @@ class UbigeoService
     
     public function findDistritosByHierarchy(array $components, string $level): array
     {
-        // El controlador ya validó el término mínimo, aquí solo orquestamos
         try {
-            // Llama al Repositorio para la construcción dinámica del WHERE
             return $this->ubigeoRepository->searchDistritosByHierarchy($components, $level);
         } catch (Exception $e) {
             throw new Exception("Fallo en la búsqueda jerárquica de Ubigeo. Por favor, intente más tarde.");

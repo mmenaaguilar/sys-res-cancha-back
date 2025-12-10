@@ -61,7 +61,6 @@ class ComplejoDeportivoFavoritoRepository
 
     public function listByUsuarioPaginated(?int $usuarioId, ?string $searchTerm, int $limit, int $offset): array
     {
-        // Hacemos JOIN con Distrito, Provincia y Departamento para tener nombres reales
         $baseSql = "FROM ComplejoDeportivoFavoritos f
                     JOIN ComplejoDeportivo c ON f.complejo_id = c.complejo_id
                     LEFT JOIN Distrito d ON c.distrito_id = d.distrito_id
@@ -83,32 +82,25 @@ class ComplejoDeportivoFavoritoRepository
 
         $where = !empty($whereClauses) ? " WHERE " . implode(" AND ", $whereClauses) : "";
 
-        // 1. Total de registros (para paginación)
         $totalSql = "SELECT COUNT(*) AS total " . $baseSql . $where;
         $stmt = $this->db->prepare($totalSql);
-        // Usamos bindValue para evitar problemas de referencia en loops
         foreach ($params as $key => $val) {
             $stmt->bindValue($key, $val);
         }
         $stmt->execute();
         $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        // 2. Datos Completos (Seleccionamos todo lo que pide el frontend)
         $dataSql = "SELECT 
                         f.favorito_id, 
                         f.usuario_id, 
                         f.complejo_id, 
                         f.fecha_agregado,
-                        
-                        -- Datos del Complejo
-                        c.nombre,                 /* Frontend usa 'nombre' */
-                        c.nombre AS complejo_nombre, /* Fallback */
-                        c.url_imagen,             /* Para la foto */
-                        c.url_map,                /* Para el botón de mapa */
-                        c.direccion_detalle,      /* Para la dirección */
+                        c.nombre,                
+                        c.nombre AS complejo_nombre, 
+                        c.url_imagen,             
+                        c.url_map,                
+                        c.direccion_detalle,     
                         c.estado AS complejo_estado,
-                        
-                        -- Datos de Ubicación
                         d.nombre AS distrito_nombre,
                         p.nombre AS provincia_nombre,
                         dep.nombre AS departamento_nombre
@@ -122,7 +114,6 @@ class ComplejoDeportivoFavoritoRepository
         foreach ($params as $key => $val) {
             $stmt->bindValue($key, $val);
         }
-        // Paginación siempre como INT
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         

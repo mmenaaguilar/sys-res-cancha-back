@@ -34,7 +34,6 @@ class ContactoRepository
      */
     public function getContactosPaginatedByFilters(?int $complejoId, ?string $searchTerm, int $limit, int $offset): array
     {
-        // 1. Definición de la consulta base y cláusulas condicionales
         $selectAndFrom = "SELECT contacto_id, complejo_id, tipo, valor_contacto, estado
                           FROM Contactos
                           WHERE 1 = 1";
@@ -44,30 +43,23 @@ class ContactoRepository
         $whereClauses = [];
         $params = [];
 
-        // Filtro MANDATORIO: complejo_id
         if ($complejoId !== null) {
             $whereClauses[] = "complejo_id = :complejo_id";
             $params[':complejo_id'] = $complejoId;
         } else {
-            // Si el ID del complejo es nulo, no devolvemos datos.
             return ['total' => 0, 'data' => []];
         }
 
-        // Filtro opcional por término de búsqueda (valor_contacto o tipo)
         if (!empty($searchTerm)) {
-            // Se busca el término en las columnas más relevantes (tipo o valor_contacto)
             $whereClauses[] = "(tipo LIKE :search_term OR valor_contacto LIKE :search_term)";
             $params[':search_term'] = '%' . $searchTerm . '%';
         }
 
-        // Construir la cláusula WHERE final
         $whereSql = !empty($whereClauses) ? " AND " . implode(" AND ", $whereClauses) : "";
 
-        // Consultas completas
         $dataSql = $selectAndFrom . $whereSql . " ORDER BY contacto_id ASC LIMIT :limit OFFSET :offset";
         $totalSql = $totalFrom . $whereSql;
 
-        // 2. Ejecutar Conteo Total
         $totalStmt = $this->db->prepare($totalSql);
         foreach ($params as $key => $value) {
             $totalStmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
@@ -75,12 +67,10 @@ class ContactoRepository
         $totalStmt->execute();
         $total = $totalStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        // 3. Obtener Datos
         $dataStmt = $this->db->prepare($dataSql);
         foreach ($params as $key => $value) {
             $dataStmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
         }
-        // Bind de los parámetros de paginación
         $dataStmt->bindParam(':limit', $limit, PDO::PARAM_INT);
         $dataStmt->bindParam(':offset', $offset, PDO::PARAM_INT);
         $dataStmt->execute();

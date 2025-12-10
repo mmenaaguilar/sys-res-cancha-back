@@ -39,23 +39,19 @@ class AuthRepository
      */
     public function create(array $data): int
     {
-        // Usamos transacciones para asegurar que ambas tablas se actualicen
         $this->db->beginTransaction();
 
         try {
-            // 1. Insertar en la tabla Usuarios
             $stmt = $this->db->prepare("INSERT INTO Usuarios (nombre, telefono, correo, contrasena) VALUES (:nombre, :telefono, :correo, :contrasena)");
             $stmt->execute([
                 ':nombre' => $data['nombre'],
-                ':telefono' => $data['telefono'] ?? null, // Puede ser opcional
+                ':telefono' => $data['telefono'] ?? null, 
                 ':correo' => $data['correo'],
                 ':contrasena' => $data['contrasena'],
             ]);
 
             $usuarioId = $this->db->lastInsertId();
 
-            // 2. Insertar en la tabla UsuarioRol (Asignar Rol 'Deportista' = 1)
-            // Asumimos rol_id = 1 es Deportista y complejo_id es NULL.
             $rolIdDeportista = 3;
 
             $stmtRol = $this->db->prepare("INSERT INTO UsuarioRol (usuario_id, rol_id, complejo_id) VALUES (:usuario_id, :rol_id, NULL)");
@@ -68,22 +64,18 @@ class AuthRepository
             return (int)$usuarioId;
         } catch (Exception $e) {
             $this->db->rollBack();
-            // Lanza el error para que el Service y Controller puedan manejarlo.
             throw new Exception("Error al crear el usuario: " . $e->getMessage());
         }
     }
 
     public function getRolesByUserId(int $usuarioId): array
     {
-        // Obtenemos solo la columna rol_id de la tabla intermedia
-        // Importante: Filtramos por estado 'activo'
         $sql = "SELECT rol_id FROM UsuarioRol 
                 WHERE usuario_id = :uid AND estado = 'activo'";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':uid' => $usuarioId]);
         
-        // FETCH_COLUMN devuelve un array simple: [1, 2] en lugar de [['rol_id'=>1], ...]
         return $stmt->fetchAll(\PDO::FETCH_COLUMN);
     }
 }

@@ -6,7 +6,7 @@ namespace App\Controllers;
 use App\Services\PoliticaService;
 use App\Core\Helpers\ApiHelper;
 use Exception;
-use PDOException; // Importar PDOException para manejo específico
+use PDOException; 
 
 class PoliticaController extends ApiHelper
 {

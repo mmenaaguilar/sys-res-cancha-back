@@ -30,7 +30,6 @@ class ContactoService
             throw new Exception("El valor del contacto es requerido.");
         }
 
-        // El estado es opcional en la creación, pero debe ser 'activo'/'inactivo' si se envía
         if (!empty($data['estado']) && !in_array($data['estado'], ['activo', 'inactivo'])) {
             throw new Exception("El estado debe ser 'activo' o 'inactivo'.");
         }
@@ -40,14 +39,11 @@ class ContactoService
     {
         $total = $result['total'];
 
-        // Calcular total de páginas
         $totalPages = $limit > 0 ? ceil($total / $limit) : 0;
-        if ($total == 0) $totalPages = 1; // Si no hay datos, hay 1 página vacía.
+        if ($total == 0) $totalPages = 1;
 
-        // Asegurar que la página actual no es mayor al total de páginas
         $page = min($page, (int)$totalPages);
 
-        // Calcular next_page y prev_page
         $hasNextPage = $page < $totalPages;
         $hasPrevPage = $page > 1;
 
@@ -57,7 +53,6 @@ class ContactoService
             'current_page' => $page,
             'last_page' => (int)$totalPages,
 
-            // ¡Nuevos campos booleanos!
             'next_page' => $hasNextPage,
             'prev_page' => $hasPrevPage,
 
@@ -90,7 +85,7 @@ class ContactoService
 
     public function createContact(array $data): int
     {
-        $data['estado'] = $data['estado'] ?? 'activo'; // Default value
+        $data['estado'] = $data['estado'] ?? 'activo';
         $this->validateContactData($data);
         return $this->contactoRepository->create($data);
     }
@@ -128,7 +123,6 @@ class ContactoService
             throw new Exception("Contacto no encontrado.");
         }
 
-        // Determina el nuevo estado
         $nuevoEstado = ($contacto['estado'] === 'activo') ? 'inactivo' : 'activo';
 
         if ($this->contactoRepository->changeStatus($id, $nuevoEstado)) {

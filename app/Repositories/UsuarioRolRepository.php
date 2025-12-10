@@ -51,7 +51,6 @@ class UsuarioRolRepository
 
 public function getUsuarioRolesPaginatedByComplejo(?int $complejoId, ?string $searchTerm, int $limit, int $offset): array
 {
-    // USAMOS LEFT JOIN para que no oculte filas si falta algún dato relacionado
     $baseSql = "FROM UsuarioRol ur
                 LEFT JOIN Roles r ON ur.rol_id = r.rol_id
                 LEFT JOIN Usuarios u ON ur.usuario_id = u.usuario_id
@@ -60,13 +59,11 @@ public function getUsuarioRolesPaginatedByComplejo(?int $complejoId, ?string $se
     $params = [];
     $whereClauses = [];
 
-    // Filtro por complejo
     if ($complejoId !== null) {
         $whereClauses[] = "ur.complejo_id = :complejo_id";
         $params[':complejo_id'] = $complejoId;
     }
 
-    // Búsqueda
     if (!empty($searchTerm)) {
         $whereClauses[] = "(u.nombre LIKE :search OR u.correo LIKE :search)";
         $params[':search'] = "%{$searchTerm}%";
@@ -74,7 +71,6 @@ public function getUsuarioRolesPaginatedByComplejo(?int $complejoId, ?string $se
 
     $where = !empty($whereClauses) ? " WHERE " . implode(" AND ", $whereClauses) : "";
 
-    // 1. Obtener TOTAL (Importante para la paginación)
     $totalSql = "SELECT COUNT(ur.usuarioRol_id) AS total " . $baseSql . $where;
     $totalStmt = $this->db->prepare($totalSql);
     $totalStmt->execute($params);
@@ -120,7 +116,6 @@ public function getUsuarioRolesPaginatedByComplejo(?int $complejoId, ?string $se
 
         $complejoId = $data['complejo_id'] ?? null;
 
-        // Crea el array de parámetros con 4 tokens, incluyendo complejo_id
         $params = [
             ':usuario_id' => $data['usuario_id'],
             ':rol_id' => $data['rol_id'],
